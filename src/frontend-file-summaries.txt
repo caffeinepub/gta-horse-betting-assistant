@@ -1,0 +1,23 @@
+{
+  "frontend/src/App.tsx": "Main application entry point that wraps the BettingWorkflow component with Layout, ThemeProvider, and Toaster for notifications.",
+  "frontend/src/hooks/useQueries.ts": "Custom React Query hooks for all backend interactions including value bets, race logging, race history, ROI, and trust weights with proper type definitions matching the backend OddsRange type.",
+  "frontend/src/components/Layout.tsx": "Application layout component with racing-themed header featuring trophy icon, app title, and footer with attribution link.",
+  "frontend/src/components/BettingWorkflow.tsx": "Main workflow orchestrator with three-screen tab navigation (Dashboard, Odds Entry, Prediction + Results) and minimized phase indicator, managing the betting loop state machine.",
+  "frontend/src/components/WorkflowIndicator.tsx": "Minimized workflow phase indicator displayed as a compact badge showing current phase and progress without blocking navigation.",
+  "frontend/src/components/OddsEntryForm.tsx": "Dynamic form for entering horse names and odds with validation, add/remove functionality; all fields initialize as blank strings with no slot number labels or default values.",
+  "frontend/src/components/PredictionDisplay.tsx": "Displays recommended pick with probability calculations and sorted list of all horses showing only names and odds without slot number references.",
+  "frontend/src/components/ResultLogger.tsx": "One-click winner selection interface that logs race results using horse names and odds only, with no slot position identifiers.",
+  "frontend/src/components/ROIDashboard.tsx": "Performance dashboard that reads metrics from AsyncStorage bettingHistory instead of backend queries, with real-time updates when new races are logged via storage subscription.",
+  "frontend/src/index.css": "Global styles with racing-inspired OKLCH color system featuring bold orange/gold accent colors for high-contrast, fast-action aesthetics in both light and dark modes.",
+  "frontend/tailwind.config.js": "Tailwind configuration with extended theme including racing-inspired color tokens and custom font families.",
+  "frontend/src/lib/utils.ts": "Utility function for merging Tailwind CSS classes using clsx and tailwind-merge.",
+  "frontend/src/components/Dashboard.tsx": "Primary dashboard screen that displays ROIDashboard performance metrics and instructional content explaining the betting workflow.",
+  "frontend/src/components/PredictionAndResults.tsx": "Combined prediction and result logging screen that constructs complete RaceRecord with all 13 required fields and saves to AsyncStorage instead of backend, with async storage operations that don't block UI.",
+  "frontend/src/types/storage.ts": "TypeScript interfaces for AsyncStorage data structures including immutable RaceRecord with 13 required fields, ModelState, BettingHistory, and OddsBucketStats with proper readonly modifiers for immutability enforcement; StorageKeys is exported as an enum (not type) for runtime usage.",
+  "frontend/src/lib/immutable.ts": "Deep freeze utility functions for enforcing runtime immutability by recursively freezing objects and arrays, with helper functions to verify frozen state.",
+  "frontend/src/lib/statsCalculator.ts": "Pure deterministic functions for calculating derived statistics (BettingHistory and OddsBucketStats) from race records array, enabling data rebuild from single source of truth.",
+  "frontend/src/lib/storage.ts": "AsyncStorage wrapper providing typed read/write operations for the four required keys with error handling, immutable race record creation, append-only race logging, and derived stats rebuild functionality; imports StorageKeys as a value (not type) and properly types the Map reconstruction from serialized data.",
+  "frontend/src/hooks/useRaceStorage.ts": "React hook providing async logRaceToStorage function that appends immutable race records to AsyncStorage and triggers derived stats recalculation with loading state and error handling.",
+  "frontend/src/hooks/useBettingHistory.ts": "React hook that reads bettingHistory from AsyncStorage and subscribes to storage changes for real-time dashboard updates without manual refresh.",
+  "frontend/src/hooks/useStorageRebuild.ts": "React hook providing manual data recovery functionality to rebuild all derived statistics from the races array with loading state and success feedback."
+}

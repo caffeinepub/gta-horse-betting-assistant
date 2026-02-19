@@ -1,0 +1,132 @@
+{
+  "kind": "build_request",
+  "title": "Implement persistent AsyncStorage data layer with immutable race records",
+  "projectName": "GTA Betting Assistant",
+  "priority": "high",
+  "requirements": [
+    {
+      "id": "REQ-23",
+      "text": "Implement AsyncStorage global data storage system with four required keys: races (array of race records), modelState (learning model parameters), bettingHistory (aggregated betting statistics), and oddsBucketStats (odds range-based trust weights)",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-current"
+        ],
+        "quotes": [
+          "GLOBAL DATA STORAGE (AsyncStorage)\nRequired keys:\nraces\nmodelState\nbettingHistory\noddsBucketStats"
+        ]
+      },
+      "acceptanceCriteria": [
+        "AsyncStorage (or equivalent browser storage mechanism) is configured with the four required keys",
+        "Each key can be read from and written to storage independently",
+        "Storage operations handle serialization and deserialization of complex objects",
+        "Storage layer includes error handling for quota exceeded and corrupted data scenarios"
+      ]
+    },
+    {
+      "id": "REQ-24",
+      "text": "Define immutable race record data model with the following fields: timestamp (string or number), odds (array of 6 numbers), impliedProbabilities (array of 6 numbers), strategyMode (string), predictedProbabilities (array of 6 numbers), signalBreakdown (array of 6 objects or numbers), recommendedContender (number index 0-5), recommendedBetSize (number), modelWeightsSnapshot (object), actualFirst (number index 0-5), actualSecond (number index 0-5), actualThird (number index 0-5), and profitLoss (number)",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-current"
+        ],
+        "quotes": [
+          "Race Record (Stored Per Race)\ntimestamp\nodds[6]\nimpliedProbabilities[6]\nstrategyMode\npredictedProbabilities[6]\nsignalBreakdown[6]\nrecommendedContender\nrecommendedBetSize\nmodelWeightsSnapshot\nactualFirst\nactualSecond\nactualThird\nprofitLoss"
+        ]
+      },
+      "acceptanceCriteria": [
+        "TypeScript interface or type definition exists for the race record structure",
+        "All 13 fields are included in the type definition with correct array lengths where specified",
+        "Race records are stored as immutable objects (using Object.freeze or readonly types)",
+        "No modification operations exist for race records after initial creation"
+      ]
+    },
+    {
+      "id": "REQ-25",
+      "text": "Enforce immutability constraint on race records once saved to storage, preventing any updates or modifications after the initial write operation",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-current"
+        ],
+        "quotes": [
+          "This must be immutable once saved."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Race records use immutable data structures (Object.freeze or deep readonly)",
+        "No update or patch methods exist for saved race records",
+        "Any attempt to modify a saved race record either throws an error or has no effect",
+        "New race data is always appended to the races array rather than modifying existing entries"
+      ]
+    },
+    {
+      "id": "REQ-26",
+      "text": "Implement system capability to rebuild derived statistics (bettingHistory, oddsBucketStats) from the races array when needed, ensuring races array is the single source of truth",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-current"
+        ],
+        "quotes": [
+          "The system must be able to rebuild derived stats from races if needed."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Function exists to recalculate bettingHistory from races array",
+        "Function exists to recalculate oddsBucketStats from races array",
+        "Rebuild functions can be triggered on demand (e.g., after data corruption or migration)",
+        "Derived stats calculation logic is deterministic and produces consistent results from the same races input"
+      ]
+    },
+    {
+      "id": "REQ-27",
+      "text": "Integrate AsyncStorage race record persistence with the existing race logging workflow in PredictionAndResults component, saving complete race records including prediction data and outcomes when results are logged",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-current"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When a race result is logged, a complete race record is constructed with all 13 required fields",
+        "Race record is appended to the races array in AsyncStorage",
+        "Derived stats (bettingHistory, oddsBucketStats) are updated after each race save",
+        "Storage operations do not block the UI; errors are handled gracefully with user feedback"
+      ]
+    },
+    {
+      "id": "REQ-28",
+      "text": "Update ROIDashboard component to read performance metrics from AsyncStorage (bettingHistory key) instead of backend queries, displaying cumulative ROI, total races, and win rate from locally stored race history",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-current"
+        ]
+      },
+      "acceptanceCriteria": [
+        "ROIDashboard reads from AsyncStorage bettingHistory key instead of backend actor",
+        "Performance metrics are calculated from locally stored race records",
+        "Dashboard updates in real-time when new races are logged to storage",
+        "Fallback displays appropriate message when no race history exists in storage"
+      ]
+    }
+  ],
+  "constraints": [
+    "Race records must remain immutable after being saved to storage",
+    "The races array is the single source of truth; all derived stats must be rebuildable from it",
+    "Storage operations must not block the UI or interrupt the fast betting workflow",
+    "All existing frontend components and backend logic must continue to function during the storage migration"
+  ],
+  "nonGoals": [
+    "Backend data storage changes (this is a frontend-only storage implementation)",
+    "Cloud synchronization or multi-device data sync",
+    "Data export or import functionality",
+    "Historical data migration from backend to AsyncStorage (focus on new race records going forward)"
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

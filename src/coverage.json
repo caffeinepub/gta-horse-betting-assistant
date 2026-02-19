@@ -1,0 +1,117 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-19T21:26:27.456Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 6,
+    "implemented": 6,
+    "items": [
+      {
+        "id": "REQ-23",
+        "summary": "Implement AsyncStorage global data storage system with four required keys: races (array of race records), modelState (learning model parameters), bettingHistory (aggregated betting statistics), and oddsBucketStats (odds range-based trust weights)",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/storage.ts",
+          "frontend/src/types/storage.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/lib/storage.ts",
+          "frontend/src/types/storage.ts"
+        ]
+      },
+      {
+        "id": "REQ-24",
+        "summary": "Define immutable race record data model with the following fields: timestamp (string or number), odds (array of 6 numbers), impliedProbabilities (array of 6 numbers), strategyMode (string), predictedProbabilities (array of 6 numbers), signalBreakdown (array of 6 objects or numbers), recommendedContender (number index 0-5), recommendedBetSize (number), modelWeightsSnapshot (object), actualFirst (number index 0-5), actualSecond (number index 0-5), actualThird (number index 0-5), and profitLoss (number)",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/types/storage.ts",
+          "frontend/src/lib/storage.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/types/storage.ts",
+          "frontend/src/lib/storage.ts"
+        ]
+      },
+      {
+        "id": "REQ-25",
+        "summary": "Enforce immutability constraint on race records once saved to storage, preventing any updates or modifications after the initial write operation",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/storage.ts",
+          "frontend/src/lib/immutable.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/lib/storage.ts",
+          "frontend/src/lib/immutable.ts"
+        ]
+      },
+      {
+        "id": "REQ-26",
+        "summary": "Implement system capability to rebuild derived statistics (bettingHistory, oddsBucketStats) from the races array when needed, ensuring races array is the single source of truth",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/statsCalculator.ts",
+          "frontend/src/lib/storage.ts",
+          "frontend/src/hooks/useStorageRebuild.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/lib/statsCalculator.ts",
+          "frontend/src/lib/storage.ts",
+          "frontend/src/hooks/useStorageRebuild.ts"
+        ]
+      },
+      {
+        "id": "REQ-27",
+        "summary": "Integrate AsyncStorage race record persistence with the existing race logging workflow in PredictionAndResults component, saving complete race records including prediction data and outcomes when results are logged",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useRaceStorage.ts",
+          "frontend/src/components/PredictionAndResults.tsx",
+          "frontend/src/components/ResultLogger.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useRaceStorage.ts",
+          "frontend/src/components/PredictionAndResults.tsx"
+        ]
+      },
+      {
+        "id": "REQ-28",
+        "summary": "Update ROIDashboard component to read performance metrics from AsyncStorage (bettingHistory key) instead of backend queries, displaying cumulative ROI, total races, and win rate from locally stored race history",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useBettingHistory.ts",
+          "frontend/src/components/ROIDashboard.tsx",
+          "frontend/src/lib/storage.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useBettingHistory.ts",
+          "frontend/src/components/ROIDashboard.tsx",
+          "frontend/src/lib/storage.ts"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/components/PredictionAndResults.tsx",
+    "frontend/src/components/ROIDashboard.tsx",
+    "frontend/src/hooks/useBettingHistory.ts",
+    "frontend/src/hooks/useRaceStorage.ts",
+    "frontend/src/hooks/useStorageRebuild.ts",
+    "frontend/src/lib/immutable.ts",
+    "frontend/src/lib/statsCalculator.ts",
+    "frontend/src/lib/storage.ts",
+    "frontend/src/types/storage.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

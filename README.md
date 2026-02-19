@@ -1,2 +1,3 @@
-# gta-horse-betting-assistant
-Exported from Caffeine project: GTA Horse Betting Assistant
+## 
+
+To run app build and run docker image: `docker build -t app . docker run -it --network host app`

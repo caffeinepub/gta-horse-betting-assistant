@@ -1,0 +1,310 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 9,
+  "summary": "GTA Online horse betting assistant that anchors predictions to odds, learns from race outcomes, improves probability calibration and ROI through value detection, updates internal trust weights, and resets after every race. Primary workflow: Enter Odds → Get Pick → Log Results → Learn → Reset → Repeat.",
+  "architectural_notes": [
+    "Odds-anchored prediction model as core engine",
+    "Incremental learning system that improves over time",
+    "Lightweight state reset after each race cycle",
+    "Primary workflow: Enter Odds → Get Pick → Log Results → Learn → Reset → Repeat",
+    "Contender slot numbers (#1–#6) are temporary per race, not persistent identities",
+    "Odds ranges are the stable grouping key for long-term learning, not slot numbers",
+    "All predictions must anchor to implied odds probability as the baseline",
+    "All enterable fields must be blank by default with no data carryover between races",
+    "Primary UI loop consists of exactly three screens: Dashboard, Odds Entry, and Prediction + Results (combined)",
+    "All other screens are secondary and must not interrupt the main race loop"
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-build-odds-entry-interface-that-allows-fast-input-of-horse-names-and-their-betting-odds",
+      "title": "Build odds entry interface that allows fast input of horse names and their betting odds",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-prediction-display-that-shows-recommended-pick-with-value-bet-reasoning-based-on-odds-and-calibrated-probabilities",
+      "title": "Create prediction display that shows recommended pick with value bet reasoning based on odds and calibrated probabilities",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-race-result-logging-interface-that-captures-which-horse-won-and-triggers-learning-update",
+      "title": "Build race result logging interface that captures which horse won and triggers learning update",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-roi-dashboard-showing-cumulative-performance-metrics-and-learning-progress",
+      "title": "Create ROI dashboard showing cumulative performance metrics and learning progress",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-design-a-streamlined-fast-paced-ui-workflow-that-optimizes-the-betting-loop-enter-odds-get-pick-log-results-learn-reset-repeat-with-minimal-friction-and-clicks",
+      "title": "Design a streamlined, fast-paced UI workflow that optimizes the betting loop: Enter Odds → Get Pick → Log Results → Learn → Reset → Repeat with minimal friction and clicks",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-cohesive-visual-theme-inspired-by-racing-and-betting-aesthetics-with-bold-high-contrast-elements-fast-action-color-palette-and-clear-typography-that-emphasizes-speed-and-confidence-in-decision-making",
+      "title": "Apply a cohesive visual theme inspired by racing and betting aesthetics with bold, high-contrast elements, fast-action color palette, and clear typography that emphasizes speed and confidence in decision-making",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-all-input-fields-horse-names-odds-are-completely-blank-by-default-on-every-race-entry-remove-any-state-carryover-auto-fill-or-pre-population-logic-between-races",
+      "title": "Ensure all input fields (horse names, odds) are completely blank by default on every race entry. Remove any state carryover, auto-fill, or pre-population logic between races.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-any-display-or-reference-to-contender-slot-numbers-in-predictiondisplay-resultlogger-and-all-other-frontend-components-present-horses-by-their-odds-and-temporary-names-only-without-implying-persistent-identity",
+      "title": "Remove any display or reference to contender slot numbers in PredictionDisplay, ResultLogger, and all other frontend components. Present horses by their odds and temporary names only, without implying persistent identity.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-restructure-the-frontend-navigation-to-present-exactly-three-primary-screens-accessible-in-the-main-race-loop-dashboard-showing-roi-and-performance-metrics-odds-entry-for-inputting-race-data-and-a-combined-prediction-results-screen-showing-predictions-and-logging-outcomes-remove-or-hide-any-other-screens-from-the-primary-workflow",
+      "title": "Restructure the frontend navigation to present exactly three primary screens accessible in the main race loop: Dashboard (showing ROI and performance metrics), Odds Entry (for inputting race data), and a combined Prediction + Results screen (showing predictions and logging outcomes). Remove or hide any other screens from the primary workflow.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-merge-predictiondisplay-and-resultlogger-components-into-a-unified-prediction-results-screen-that-displays-both-the-prediction-output-recommended-pick-value-bets-and-the-result-logging-interface-winner-selection-in-a-single-cohesive-view-without-requiring-navigation-between-separate-screens",
+      "title": "Merge PredictionDisplay and ResultLogger components into a unified Prediction + Results screen that displays both the prediction output (recommended pick, value bets) and the result logging interface (winner selection) in a single cohesive view without requiring navigation between separate screens.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-bettingworkflow-component-to-enforce-a-three-screen-architecture-where-the-workflow-phases-map-to-the-three-primary-screens-dashboard-is-always-accessible-odds-entry-corresponds-to-the-entry-phase-and-the-combined-prediction-results-screen-handles-both-prediction-and-result-phases-together-remove-workflowindicator-or-demote-it-to-secondary-status-if-it-interrupts-the-main-loop",
+      "title": "Update the BettingWorkflow component to enforce a three-screen architecture where the workflow phases map to the three primary screens: Dashboard is always accessible, Odds Entry corresponds to the entry phase, and the combined Prediction + Results screen handles both prediction and result phases together. Remove WorkflowIndicator or demote it to secondary status if it interrupts the main loop.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-roidashboard-component-is-integrated-into-the-dashboard-primary-screen-and-is-always-accessible-to-users-allowing-them-to-view-performance-metrics-at-any-point-in-the-race-loop-without-navigating-away-from-the-primary-workflow",
+      "title": "Ensure the ROIDashboard component is integrated into the Dashboard primary screen and is always accessible to users, allowing them to view performance metrics at any point in the race loop without navigating away from the primary workflow.",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-asyncstorage-global-data-storage-system-with-four-required-keys-races-array-of-race-records-modelstate-learning-model-parameters-bettinghistory-aggregated-betting-statistics-and-oddsbucketstats-odds-range-based-trust-weights",
+      "title": "Implement AsyncStorage global data storage system with four required keys: races (array of race records), modelState (learning model parameters), bettingHistory (aggregated betting statistics), and oddsBucketStats (odds range-based trust weights)",
+      "reqIds": [
+        "REQ-23"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-define-immutable-race-record-data-model-with-the-following-fields-timestamp-string-or-number-odds-array-of-6-numbers-impliedprobabilities-array-of-6-numbers-strategymode-string-predictedprobabilities-array-of-6-numbers-signalbreakdown-array-of-6-objects-or-numbers-recommendedcontender-number-index-0-5-recommendedbetsize-number-modelweightssnapshot-object-actualfirst-number-index-0-5-actualsecond-number-index-0-5-actualthird-number-index-0-5-and-profitloss-number",
+      "title": "Define immutable race record data model with the following fields: timestamp (string or number), odds (array of 6 numbers), impliedProbabilities (array of 6 numbers), strategyMode (string), predictedProbabilities (array of 6 numbers), signalBreakdown (array of 6 objects or numbers), recommendedContender (number index 0-5), recommendedBetSize (number), modelWeightsSnapshot (object), actualFirst (number index 0-5), actualSecond (number index 0-5), actualThird (number index 0-5), and profitLoss (number)",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-enforce-immutability-constraint-on-race-records-once-saved-to-storage-preventing-any-updates-or-modifications-after-the-initial-write-operation",
+      "title": "Enforce immutability constraint on race records once saved to storage, preventing any updates or modifications after the initial write operation",
+      "reqIds": [
+        "REQ-25"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-system-capability-to-rebuild-derived-statistics-bettinghistory-oddsbucketstats-from-the-races-array-when-needed-ensuring-races-array-is-the-single-source-of-truth",
+      "title": "Implement system capability to rebuild derived statistics (bettingHistory, oddsBucketStats) from the races array when needed, ensuring races array is the single source of truth",
+      "reqIds": [
+        "REQ-26"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-integrate-asyncstorage-race-record-persistence-with-the-existing-race-logging-workflow-in-predictionandresults-component-saving-complete-race-records-including-prediction-data-and-outcomes-when-results-are-logged",
+      "title": "Integrate AsyncStorage race record persistence with the existing race logging workflow in PredictionAndResults component, saving complete race records including prediction data and outcomes when results are logged",
+      "reqIds": [
+        "REQ-27"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-roidashboard-component-to-read-performance-metrics-from-asyncstorage-bettinghistory-key-instead-of-backend-queries-displaying-cumulative-roi-total-races-and-win-rate-from-locally-stored-race-history",
+      "title": "Update ROIDashboard component to read performance metrics from AsyncStorage (bettingHistory key) instead of backend queries, displaying cumulative ROI, total races, and win rate from locally stored race history",
+      "reqIds": [
+        "REQ-28"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Odds-based prediction system",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Race outcome logging and learning system",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Probability calibration improvement mechanism",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "ROI tracking and value bet detection",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Internal trust weight system with gradual updates",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Clean race reset functionality",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Fast, frictionless betting loop UX",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Create backend data model to store race history including horse identifiers, odds, predicted probabilities, actual outcomes, and timestamp",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Implement odds-to-probability conversion algorithm that anchors all predictions to the entered odds",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Build learning system that updates internal trust weights based on prediction accuracy and actual race outcomes",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Implement value bet detection algorithm that identifies horses with positive expected value based on odds vs calibrated probabilities",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Create ROI tracking system that calculates cumulative return on investment across all logged races",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Implement race reset functionality that clears current race state while preserving learning history",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "Implement reset button that clears current race and prepares interface for next race entry",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Refactor backend data model to eliminate any storage or tracking of contender slot numbers (#1–#6). Remove horse names from persistent storage. Store only odds values, predicted probabilities, actual outcomes (win/loss), and timestamps in race history.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Restructure trust weight learning system to group by odds ranges instead of individual horse identities or slot numbers. Define reasonable odds range buckets (e.g., 1.0-2.0, 2.0-3.0, 3.0-5.0, 5.0-10.0, 10.0+) and update trust weights at the range level based on prediction accuracy.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-20",
+      "summary": "Enforce that all prediction logic anchors to implied odds probability as the baseline. Implement adjustments (from trust weights or other signals) that modify this baseline rather than replace it. Ensure no prediction pathway bypasses the odds-derived starting point.",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Consolidate primary UI into three essential screens: Dashboard, Odds Entry, and Prediction + Results (combined). Remove or demote all other screens to secondary status outside the main race loop.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-22",
+      "summary": "Implement AsyncStorage global data storage with required keys: races, modelState, bettingHistory, oddsBucketStats, with ability to rebuild derived stats from races",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-23",
+      "summary": "Define immutable race record data model with fields: timestamp, odds[6], impliedProbabilities[6], strategyMode, predictedProbabilities[6], signalBreakdown[6], recommendedContender, recommendedBetSize, modelWeightsSnapshot, actualFirst, actualSecond, actualThird, profitLoss",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "projectName": "GTA Horse Betting Assistant",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}
