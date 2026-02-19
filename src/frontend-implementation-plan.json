@@ -1,88 +1,118 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Define modelState storage schema with comprehensive signal weights and learning parameters",
+  "title": "Redesign Prediction Screen with Primary/Secondary Panel Layout",
   "requirements": [
     {
-      "id": "REQ-36",
-      "summary": "Expand ModelState interface with nested signalWeights object containing four numeric weight fields",
+      "id": "REQ-64",
+      "summary": "Redesign PredictionAndResults layout with Strategy Mode header and six-row odds/implied probability display",
       "acceptanceCriteria": [
-        "ModelState interface includes a signalWeights object with four numeric weight fields",
-        "All weight fields are typed as number",
-        "TypeScript compilation succeeds with no type errors"
+        "Strategy Mode (Safe/Balanced/Value/Aggressive) is displayed at the top of the prediction screen",
+        "All six odds values are displayed with their implied probabilities in a clear row or table format",
+        "Each contender is labeled #1 through #6 with its odds and implied probability visible simultaneously"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/types/storage.ts",
+          "path": "frontend/src/components/PredictionAndResults.tsx",
           "operation": "modify",
-          "description": "Add a nested signalWeights object to the ModelState interface containing oddsWeight, historicalBucketWeight, recentBucketWeight, and consistencyWeight fields, all typed as number. The signalWeights object represents the machine learning model's weighting system for different prediction signals."
+          "description": "Restructure the component to add a header section at the top displaying the selected strategy mode and create a six-row table or grid showing all contenders (#1-#6) with their odds and calculated implied probabilities (1/odds). Move existing prediction logic into the new layout structure while preserving calculation and result logging functionality."
         }
       ]
     },
     {
-      "id": "REQ-37",
-      "summary": "Add five additional learning parameter fields to the ModelState interface",
+      "id": "REQ-65",
+      "summary": "Create Primary Panel displaying recommended best bet with predicted probability, implied probability, value edge, confidence level, and recommended bet amount",
       "acceptanceCriteria": [
-        "ModelState interface includes all five additional fields with correct types",
-        "driftDetectionState is typed as an appropriate structure (object or custom interface)",
-        "All numeric fields are typed as number",
-        "TypeScript compilation succeeds"
+        "Primary panel is visually distinct and prominent in the layout",
+        "Best Bet label clearly shows the contender number (#1-#6) of the recommended pick",
+        "Predicted Probability displays the adjusted probability calculated by the prediction engine",
+        "Implied Probability shows the baseline 1/odds probability",
+        "Value Edge shows the difference between predicted and implied probabilities",
+        "Confidence level displays as High, Medium, or Low with appropriate visual styling",
+        "Recommended Bet displays the calculated bet size in dollars"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/types/storage.ts",
+          "path": "frontend/src/components/PredictionAndResults.tsx",
           "operation": "modify",
-          "description": "Add calibrationScalar (number), confidenceScalingFactor (number), recentAccuracyWindow (number), driftDetectionState (object with appropriate structure for tracking model drift), and raceCount (number) fields to the ModelState interface. These fields support the adaptive learning and calibration system."
+          "description": "Add a Primary Panel section below the header that displays the recommended contender pick with the label 'BEST BET: #X' where X is the contender number (1-6). Show Predicted Probability (adjusted from prediction engine), Implied Probability (baseline 1/odds), Value Edge (predicted minus implied), Confidence Level (High/Medium/Low with visual indicator like badge or color), and Recommended Bet (dollar amount from bet sizing logic). Use prominent styling with larger font, bold text, or highlighted background to make this panel visually distinct."
         }
       ]
     },
     {
-      "id": "REQ-38",
-      "summary": "Initialize modelState with default values for all new fields when no existing modelState is found",
+      "id": "REQ-66",
+      "summary": "Create Secondary Panel displaying signal breakdown with four individual signal contributions",
       "acceptanceCriteria": [
-        "readModelState function returns a complete ModelState object with all fields populated",
-        "Default values are sensible starting points for the learning system",
-        "No undefined or null values in the returned modelState structure"
+        "Secondary panel is clearly separated from the primary panel but still visible on the same screen",
+        "Four distinct signals are displayed with clear labels",
+        "Odds Signal shows the baseline implied probability contribution",
+        "Historical Bucket Signal shows the adjustment from historical bucket performance (Bucket Win Delta)",
+        "Recent Bucket Signal shows the adjustment from recent session performance (Recent Session Delta)",
+        "Consistency Signal shows the adjustment from variance-based consistency modifier",
+        "Signal values are presented numerically or as percentages with clear formatting"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/lib/storage.ts",
+          "path": "frontend/src/components/PredictionAndResults.tsx",
           "operation": "modify",
-          "description": "Update the readModelState function to initialize a complete ModelState object with default values for signalWeights (with default numeric values for all four weights), calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, and raceCount when no existing modelState is found in localStorage. Ensure all fields are populated with sensible starting values for the learning system and apply deep freeze for immutability."
+          "description": "Add a Secondary Panel section below the Primary Panel that displays a Signal Breakdown showing four individual signal contributions: Odds Signal (baseline implied probability), Historical Bucket Signal (historical bucket win delta contribution), Recent Bucket Signal (recent session delta contribution), and Consistency Signal (variance-based consistency modifier). Display each signal with a clear label and numeric or percentage value. Use visual separation (border, background, spacing) to distinguish this panel from the Primary Panel while keeping it visible on the same screen."
         }
       ]
     },
     {
-      "id": "REQ-39",
-      "summary": "Add writeModelState function to persist ModelState objects with immutability enforcement",
+      "id": "REQ-67",
+      "summary": "Add optional Hot Odds Bucket and Trap Odds Bucket informational indicators",
       "acceptanceCriteria": [
-        "writeModelState function accepts a ModelState parameter and saves it to localStorage",
-        "Function enforces immutability by deep freezing the stored object",
-        "Function triggers storage change listeners to notify subscribers",
-        "Function returns success or failure status"
+        "Hot Odds Bucket displays the odds range (1-2, 3-5, 6-10, or 11-30) with the best recent performance metrics",
+        "Trap Odds Bucket displays the odds range with the worst recent performance or highest variance",
+        "These indicators are visually distinct but secondary to the main prediction information",
+        "Indicators use bucket statistics from oddsBucketStats to determine hot/trap status",
+        "Display is optional and can be shown/hidden or placed in a collapsible section"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/lib/storage.ts",
+          "path": "frontend/src/components/PredictionAndResults.tsx",
           "operation": "modify",
-          "description": "Add a writeModelState function that accepts a ModelState object parameter, deep freezes it for immutability enforcement, persists it to localStorage under the 'modelState' key, triggers storage change listeners to notify all subscribers, and returns a success or failure status. Follow the same pattern as existing write functions in the storage module."
+          "description": "Add optional informational indicators showing Hot Odds Bucket (the bucket with best recent performance) and Trap Odds Bucket (the bucket with worst recent performance or highest variance). Use oddsBucketStats data to identify the best and worst performing buckets from the four ranges (1-2, 3-5, 6-10, 11-30). Display these indicators in a non-intrusive way below or alongside the Secondary Panel, using subtle styling that doesn't compete with the primary prediction information. Consider making these collapsible or toggleable."
         }
       ]
     },
     {
-      "id": "REQ-40",
-      "summary": "Add functions to compute updated signal weights and calibration parameters from race records",
+      "id": "REQ-68",
+      "summary": "Update signal breakdown calculation logic to return individual signal components as separate numeric values",
       "acceptanceCriteria": [
-        "Functions accept an array of RaceRecord and current ModelState as inputs",
-        "Functions return updated ModelState with recalculated signal weights and parameters",
-        "Calculation logic is pure and deterministic",
-        "Functions include TypeScript type safety for all inputs and outputs"
+        "Prediction engine function returns a signalBreakdown object containing four separate signal values",
+        "Odds signal represents the baseline implied probability contribution (1/odds)",
+        "Historical bucket signal represents the Bucket Win Delta adjustment weight",
+        "Recent bucket signal represents the Recent Session Delta adjustment weight",
+        "Consistency signal represents the variance-based consistency modifier weight",
+        "Signal breakdown values are calculated for the recommended contender and passed to the UI"
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/statsCalculator.ts",
           "operation": "modify",
-          "description": "Add pure functions that compute updated signal weights and calibration parameters from an array of RaceRecord and current ModelState inputs. Functions should return an updated ModelState with recalculated signalWeights (oddsWeight, historicalBucketWeight, recentBucketWeight, consistencyWeight) and calibration parameters (calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, raceCount). Implement deterministic calculation logic with full TypeScript type safety. These functions prepare the foundation for future integration with the prediction system."
+          "description": "Extend the prediction engine function to return a signalBreakdown object containing four separate numeric values: oddsSignal (baseline implied probability 1/odds), historicalBucketSignal (Bucket Win Delta adjustment weight), recentBucketSignal (Recent Session Delta adjustment weight), and consistencySignal (variance-based consistency modifier weight). These values should represent the individual contributions to the final adjusted probability for the recommended contender. Ensure the function signature and return type are updated to include this breakdown while maintaining all existing calculation logic."
+        }
+      ]
+    },
+    {
+      "id": "REQ-69",
+      "summary": "Restructure PredictionAndResults layout hierarchy into three distinct visual sections",
+      "acceptanceCriteria": [
+        "Three distinct sections are visually identifiable with appropriate spacing and borders/backgrounds",
+        "Header section appears at the top and contains strategy mode and all odds/probabilities",
+        "Primary Panel is prominently displayed with larger text and emphasis on the recommended bet",
+        "Secondary Panel is below the Primary Panel but still easily readable",
+        "Optional indicators (Hot/Trap buckets) are positioned below or alongside the Secondary Panel",
+        "Layout is responsive and maintains hierarchy on different screen sizes",
+        "Result logging interface (winner selection) remains accessible below the prediction display"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/PredictionAndResults.tsx",
+          "operation": "modify",
+          "description": "Restructure the entire component layout hierarchy to organize content into three distinct visual sections: (1) Header section at the top with Strategy Mode and six-row odds/implied probability display, (2) Primary Panel prominently displaying recommended bet details with larger text and emphasis, (3) Secondary Panel below the Primary Panel with signal breakdown and optional bucket indicators. Use appropriate spacing, borders, backgrounds, or container components to create clear visual hierarchy. Ensure the result logging interface (winner selection) remains accessible below all prediction information. Maintain responsive design so the hierarchy is preserved on different screen sizes."
         }
       ]
     }

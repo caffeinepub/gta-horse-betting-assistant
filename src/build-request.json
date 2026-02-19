@@ -1,105 +1,165 @@
 {
   "kind": "build_request",
-  "title": "Define modelState storage schema with comprehensive signal weights and learning parameters",
-  "projectName": "GTA Horse Betting Assistant",
+  "title": "Redesign Prediction Screen with Primary/Secondary Panel Layout",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-36",
-      "text": "Update frontend/src/types/storage.ts to expand the ModelState interface with a nested signalWeights object containing oddsWeight (number), historicalBucketWeight (number), recentBucketWeight (number), and consistencyWeight (number) fields",
+      "id": "REQ-64",
+      "text": "Redesign the PredictionAndResults component layout to display Strategy Mode prominently at the top, followed by a six-row display showing all odds with their corresponding real-time calculated implied probabilities (odds/implied pairs for contenders #1-#6)",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-last"
         ],
         "quotes": [
-          "signalWeights: oddsWeight historicalBucketWeight recentBucketWeight consistencyWeight"
+          "Strategy Mode",
+          "All odds + implied probabilities"
         ]
       },
       "acceptanceCriteria": [
-        "ModelState interface includes a signalWeights object with four numeric weight fields",
-        "All weight fields are typed as number",
-        "TypeScript compilation succeeds with no type errors"
+        "Strategy Mode (Safe/Balanced/Value/Aggressive) is displayed at the top of the prediction screen",
+        "All six odds values are displayed with their implied probabilities in a clear row or table format",
+        "Each contender is labeled #1 through #6 with its odds and implied probability visible simultaneously"
       ]
     },
     {
-      "id": "REQ-37",
-      "text": "Add calibrationScalar (number), confidenceScalingFactor (number), recentAccuracyWindow (number), driftDetectionState (object or appropriate type), and raceCount (number) fields to the ModelState interface in frontend/src/types/storage.ts",
+      "id": "REQ-65",
+      "text": "Create a Primary Panel section in PredictionAndResults that displays the recommended pick with the label 'BEST BET: #X' (where X is the contender number 1-6), showing Predicted Probability (adjusted probability from prediction engine), Implied Probability (baseline 1/odds), Value Edge (adjusted minus implied), Confidence Level (High/Medium/Low with visual indicator), and Recommended Bet (dollar amount with bet sizing logic)",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-last"
         ],
         "quotes": [
-          "calibrationScalar confidenceScalingFactor recentAccuracyWindow driftDetectionState raceCount"
+          "Primary panel:",
+          "BEST BET: #X",
+          "Predicted Probability",
+          "Implied Probability",
+          "Value Edge",
+          "Confidence",
+          "Recommended Bet"
         ]
       },
       "acceptanceCriteria": [
-        "ModelState interface includes all five additional fields with correct types",
-        "driftDetectionState is typed as an appropriate structure (object or custom interface)",
-        "All numeric fields are typed as number",
-        "TypeScript compilation succeeds"
+        "Primary panel is visually distinct and prominent in the layout",
+        "Best Bet label clearly shows the contender number (#1-#6) of the recommended pick",
+        "Predicted Probability displays the adjusted probability calculated by the prediction engine",
+        "Implied Probability shows the baseline 1/odds probability",
+        "Value Edge shows the difference between predicted and implied probabilities",
+        "Confidence level displays as High, Medium, or Low with appropriate visual styling",
+        "Recommended Bet displays the calculated bet size in dollars"
       ]
     },
     {
-      "id": "REQ-38",
-      "text": "Update frontend/src/lib/storage.ts AsyncStorage implementation to initialize modelState with default values for all fields (signalWeights with default weight values, calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, raceCount) when no existing modelState is found in localStorage",
+      "id": "REQ-66",
+      "text": "Create a Secondary Panel section in PredictionAndResults that displays a Signal Breakdown showing four individual signal contributions: Odds Signal (baseline probability contribution), Historical Bucket Signal (bucket win delta contribution), Recent Bucket Signal (recent session delta contribution), and Consistency Signal (consistency modifier contribution from variance)",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-last"
+        ],
+        "quotes": [
+          "Secondary panel:",
+          "Signal breakdown: Odds signal",
+          "Historical bucket signal",
+          "Recent bucket signal",
+          "Consistency signal"
         ]
       },
       "acceptanceCriteria": [
-        "readModelState function returns a complete ModelState object with all fields populated",
-        "Default values are sensible starting points for the learning system",
-        "No undefined or null values in the returned modelState structure"
+        "Secondary panel is clearly separated from the primary panel but still visible on the same screen",
+        "Four distinct signals are displayed with clear labels",
+        "Odds Signal shows the baseline implied probability contribution",
+        "Historical Bucket Signal shows the adjustment from historical bucket performance (Bucket Win Delta)",
+        "Recent Bucket Signal shows the adjustment from recent session performance (Recent Session Delta)",
+        "Consistency Signal shows the adjustment from variance-based consistency modifier",
+        "Signal values are presented numerically or as percentages with clear formatting"
       ]
     },
     {
-      "id": "REQ-39",
-      "text": "Add a writeModelState function to frontend/src/lib/storage.ts that accepts a ModelState object and persists it to AsyncStorage under the 'modelState' key with immutability enforcement",
+      "id": "REQ-67",
+      "text": "Add optional informational indicators to the PredictionAndResults screen showing 'Hot Odds Bucket' (the odds bucket with the best recent performance) and 'Trap Odds Bucket' (the odds bucket with the worst recent performance or highest variance), displaying these in a non-intrusive way that doesn't interfere with the primary workflow",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-last"
+        ],
+        "quotes": [
+          "Optional:",
+          "Hot Odds Bucket",
+          "Trap Odds Bucket"
         ]
       },
       "acceptanceCriteria": [
-        "writeModelState function accepts a ModelState parameter and saves it to localStorage",
-        "Function enforces immutability by deep freezing the stored object",
-        "Function triggers storage change listeners to notify subscribers",
-        "Function returns success or failure status"
+        "Hot Odds Bucket displays the odds range (1-2, 3-5, 6-10, or 11-30) with the best recent performance metrics",
+        "Trap Odds Bucket displays the odds range with the worst recent performance or highest variance",
+        "These indicators are visually distinct but secondary to the main prediction information",
+        "Indicators use bucket statistics from oddsBucketStats to determine hot/trap status",
+        "Display is optional and can be shown/hidden or placed in a collapsible section"
       ]
     },
     {
-      "id": "REQ-40",
-      "text": "Update frontend/src/lib/statsCalculator.ts to add functions that compute updated signal weights and calibration parameters from race records, preparing for future integration with the prediction system",
+      "id": "REQ-68",
+      "text": "Update the signal breakdown calculation logic in statsCalculator.ts to return individual signal components (odds signal, historical bucket signal, recent bucket signal, consistency signal) as separate numeric values that can be displayed in the Secondary Panel, ensuring these values represent the additive or multiplicative contributions to the final adjusted probability",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-last"
+        ],
+        "quotes": [
+          "Signal breakdown: Odds signal",
+          "Historical bucket signal",
+          "Recent bucket signal",
+          "Consistency signal"
         ]
       },
       "acceptanceCriteria": [
-        "Functions accept an array of RaceRecord and current ModelState as inputs",
-        "Functions return updated ModelState with recalculated signal weights and parameters",
-        "Calculation logic is pure and deterministic",
-        "Functions include TypeScript type safety for all inputs and outputs"
+        "Prediction engine function returns a signalBreakdown object containing four separate signal values",
+        "Odds signal represents the baseline implied probability contribution (1/odds)",
+        "Historical bucket signal represents the Bucket Win Delta adjustment weight",
+        "Recent bucket signal represents the Recent Session Delta adjustment weight",
+        "Consistency signal represents the variance-based consistency modifier weight",
+        "Signal breakdown values are calculated for the recommended contender and passed to the UI"
+      ]
+    },
+    {
+      "id": "REQ-69",
+      "text": "Restructure the PredictionAndResults component layout hierarchy to organize content into three distinct visual sections: (1) Header section with Strategy Mode and full odds/implied probability display, (2) Primary Panel with recommended bet details, (3) Secondary Panel with signal breakdown and optional bucket indicators, ensuring clear visual hierarchy and spacing between sections",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "Strategy Mode",
+          "Primary panel:",
+          "Secondary panel:",
+          "Optional:"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Three distinct sections are visually identifiable with appropriate spacing and borders/backgrounds",
+        "Header section appears at the top and contains strategy mode and all odds/probabilities",
+        "Primary Panel is prominently displayed with larger text and emphasis on the recommended bet",
+        "Secondary Panel is below the Primary Panel but still easily readable",
+        "Optional indicators (Hot/Trap buckets) are positioned below or alongside the Secondary Panel",
+        "Layout is responsive and maintains hierarchy on different screen sizes",
+        "Result logging interface (winner selection) remains accessible below the prediction display"
       ]
     }
   ],
   "constraints": [
-    "Do not modify backend Motoko files; modelState is frontend-only storage",
-    "Maintain compatibility with existing AsyncStorage structure (races, bettingHistory, oddsBucketStats)",
-    "Preserve immutability constraints on all stored data",
-    "Do not alter the four-bucket odds range system (1-2, 3-5, 6-10, 11-30)"
+    "Do not modify frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or any files in frontend/src/components/ui",
+    "Maintain the existing prediction engine logic in statsCalculator.ts; only extend it to expose individual signal components",
+    "Keep the current race logging and result interface functionality intact",
+    "Preserve the three-screen navigation architecture (Dashboard, Odds Entry, Prediction+Results)"
   ],
   "nonGoals": [
-    "Implementing the prediction logic that uses signal weights (separate future requirement)",
-    "Creating UI components to display or edit modelState parameters",
-    "Integrating modelState updates with race logging workflow",
-    "Defining specific default values for signal weights and calibration parameters"
+    "Changing the prediction algorithm or probability calculation formulas",
+    "Modifying the strategy mode selection logic",
+    "Altering the bet sizing algorithm",
+    "Redesigning the odds entry screen",
+    "Changing the backend Motoko actor implementation"
   ],
   "imageRequirements": {
     "required": [],

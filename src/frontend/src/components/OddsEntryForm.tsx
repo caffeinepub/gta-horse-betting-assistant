@@ -1,81 +1,123 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Trash2, ArrowRight } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export interface HorseWithName {
-  name: string;
-  odds: number;
+export interface OddsOnlyData {
+  odds: number[];
+  strategyMode: 'Safe' | 'Balanced' | 'Value' | 'Aggressive';
 }
 
 interface OddsEntryFormProps {
-  onSubmit: (horses: HorseWithName[]) => void;
+  onSubmit: (data: OddsOnlyData) => void;
 }
 
-interface HorseInput {
-  name: string;
-  odds: string;
-}
+const STRATEGY_MODES = ['Safe', 'Balanced', 'Value', 'Aggressive'] as const;
 
 export function OddsEntryForm({ onSubmit }: OddsEntryFormProps) {
-  const [horseInputs, setHorseInputs] = useState<HorseInput[]>([
-    { name: '', odds: '' },
-    { name: '', odds: '' },
-  ]);
+  const [oddsValues, setOddsValues] = useState<string[]>(['', '', '', '', '', '']);
+  const [strategyMode, setStrategyMode] = useState<'Safe' | 'Balanced' | 'Value' | 'Aggressive'>('Balanced');
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const addHorse = () => {
-    setHorseInputs([...horseInputs, { name: '', odds: '' }]);
-  };
-
-  const removeHorse = (index: number) => {
-    if (horseInputs.length <= 2) {
-      toast.error('Need at least 2 horses');
-      return;
+  // Load strategy mode from localStorage on mount
+  useEffect(() => {
+    const savedStrategy = localStorage.getItem('strategyMode');
+    if (savedStrategy && STRATEGY_MODES.includes(savedStrategy as any)) {
+      setStrategyMode(savedStrategy as 'Safe' | 'Balanced' | 'Value' | 'Aggressive');
     }
-    setHorseInputs(horseInputs.filter((_, i) => i !== index));
+  }, []);
+
+  // Auto-focus on first field on mount
+  useEffect(() => {
+    inputRefs.current[0]?.focus();
+  }, []);
+
+  // Persist strategy mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('strategyMode', strategyMode);
+  }, [strategyMode]);
+
+  const validateOdds = (value: string): boolean => {
+    if (value === '') return false;
+    const num = parseInt(value, 10);
+    return !isNaN(num) && num >= 1 && num <= 30 && value === num.toString();
   };
 
-  const updateHorse = (index: number, field: 'name' | 'odds', value: string) => {
-    const updated = [...horseInputs];
-    updated[index][field] = value;
-    setHorseInputs(updated);
+  const handleOddsChange = (index: number, value: string) => {
+    // Allow empty string or valid integer input
+    if (value === '' || /^\d+$/.test(value)) {
+      const num = parseInt(value, 10);
+      // Only update if empty or within range
+      if (value === '' || (num >= 1 && num <= 30)) {
+        const updated = [...oddsValues];
+        updated[index] = value;
+        setOddsValues(updated);
+      }
+    }
   };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Check if current field has valid value
+      if (!validateOdds(oddsValues[index])) {
+        toast.error('Enter a valid odds value (1-30) before continuing');
+        return;
+      }
+
+      // If this is the last field (#6), submit the form
+      if (index === 5) {
+        handleSubmit(e as any);
+      } else {
+        // Move to next field
+        inputRefs.current[index + 1]?.focus();
+      }
+    }
+  };
+
+  const calculateImpliedProbability = (odds: string): string => {
+    if (!validateOdds(odds)) return '—';
+    const num = parseInt(odds, 10);
+    const prob = (1 / num) * 100;
+    return prob.toFixed(2) + '%';
+  };
+
+  const calculateTotalImpliedProbability = (): number => {
+    let total = 0;
+    for (const odds of oddsValues) {
+      if (validateOdds(odds)) {
+        const num = parseInt(odds, 10);
+        total += (1 / num) * 100;
+      }
+    }
+    return total;
+  };
+
+  const totalImpliedProb = calculateTotalImpliedProbability();
+  const hasOverround = totalImpliedProb > 100;
+
+  const isFormValid = oddsValues.every(validateOdds);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate inputs
-    const validHorses = horseInputs.filter((h) => h.name.trim() && h.odds.trim());
-
-    if (validHorses.length < 2) {
-      toast.error('Enter at least 2 horses with odds');
+    if (!isFormValid) {
+      toast.error('All six odds fields must be filled with values 1-30');
       return;
     }
 
-    // Convert to HorseWithName type
-    const horses: HorseWithName[] = validHorses.map((h) => ({
-      name: h.name.trim(),
-      odds: parseFloat(h.odds),
-    }));
+    const data: OddsOnlyData = {
+      odds: oddsValues.map(v => parseInt(v, 10)),
+      strategyMode,
+    };
 
-    // Validate odds
-    const invalidOdds = horses.some((h) => isNaN(h.odds) || h.odds <= 0);
-    if (invalidOdds) {
-      toast.error('All odds must be positive numbers');
-      return;
-    }
-
-    // Check for duplicate names
-    const names = horses.map((h) => h.name.toLowerCase());
-    if (new Set(names).size !== names.length) {
-      toast.error('Horse names must be unique');
-      return;
-    }
-
-    onSubmit(horses);
+    onSubmit(data);
   };
 
   return (
@@ -83,69 +125,85 @@ export function OddsEntryForm({ onSubmit }: OddsEntryFormProps) {
       <CardHeader>
         <CardTitle className="text-2xl font-black uppercase">Enter Race Odds</CardTitle>
         <CardDescription className="text-base">
-          Add horses and their betting odds. Odds format: 2.5 means 2.5:1 payout.
+          Enter odds for exactly six contenders (integers 1-30 only)
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Six fixed odds rows */}
           <div className="space-y-3">
-            {horseInputs.map((horse, index) => (
-              <div key={index} className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <Label htmlFor={`horse-${index}`} className="text-xs font-bold uppercase">
-                    Horse Name
-                  </Label>
+            {oddsValues.map((odds, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <Label className="text-sm font-bold w-8">
+                  #{index + 1}
+                </Label>
+                <div className="flex-1 flex items-center gap-2">
                   <Input
-                    id={`horse-${index}`}
-                    placeholder="Enter name"
-                    value={horse.name}
-                    onChange={(e) => updateHorse(index, 'name', e.target.value)}
-                    className="font-semibold"
+                    ref={(el) => {
+                      inputRefs.current[index] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder=""
+                    value={odds}
+                    onChange={(e) => handleOddsChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    className="font-semibold text-lg w-24"
                   />
+                  <span className="text-muted-foreground font-medium">/1</span>
+                  <span className="ml-auto text-sm font-semibold text-muted-foreground min-w-[80px] text-right">
+                    {calculateImpliedProbability(odds)}
+                  </span>
                 </div>
-                <div className="w-32">
-                  <Label htmlFor={`odds-${index}`} className="text-xs font-bold uppercase">
-                    Odds
-                  </Label>
-                  <Input
-                    id={`odds-${index}`}
-                    type="number"
-                    step="0.1"
-                    min="0.1"
-                    placeholder="2.5"
-                    value={horse.odds}
-                    onChange={(e) => updateHorse(index, 'odds', e.target.value)}
-                    className="font-semibold"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => removeHorse(index)}
-                  disabled={horseInputs.length <= 2}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
               </div>
             ))}
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addHorse}
-              className="flex-1 font-bold"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Horse
-            </Button>
-            <Button type="submit" className="flex-1 font-bold text-base" size="lg">
-              Get Predictions
-              <ArrowRight className="h-5 w-5 ml-2" />
-            </Button>
+          {/* Total implied probability and overround warning */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border">
+              <span className="font-bold text-sm uppercase">Total Implied Probability:</span>
+              <span className={`font-black text-lg ${hasOverround ? 'text-destructive' : 'text-foreground'}`}>
+                {totalImpliedProb.toFixed(2)}%
+              </span>
+            </div>
+            
+            {hasOverround && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="font-semibold">
+                  Overround detected: Bookmaker margin present ({(totalImpliedProb - 100).toFixed(2)}%)
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
+
+          {/* Strategy Mode Selector */}
+          <div className="space-y-3">
+            <Label className="text-sm font-bold uppercase">Strategy Mode</Label>
+            <RadioGroup value={strategyMode} onValueChange={(value) => setStrategyMode(value as any)}>
+              <div className="grid grid-cols-2 gap-3">
+                {STRATEGY_MODES.map((mode) => (
+                  <div key={mode} className="flex items-center space-x-2">
+                    <RadioGroupItem value={mode} id={mode} />
+                    <Label htmlFor={mode} className="font-semibold cursor-pointer">
+                      {mode}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* Submit Button */}
+          <Button 
+            type="submit" 
+            className="w-full font-bold text-base uppercase" 
+            size="lg"
+            disabled={!isFormValid}
+          >
+            Enter / Calculate Pick
+          </Button>
         </form>
       </CardContent>
     </Card>

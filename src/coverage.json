@@ -1,68 +1,79 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T21:50:26.264Z",
+  "generatedAt": "2026-02-19T22:59:30.534Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 5,
+    "total": 6,
+    "implemented": 6,
     "items": [
       {
-        "id": "REQ-36",
-        "summary": "Update frontend/src/types/storage.ts to expand the ModelState interface with a nested signalWeights object containing oddsWeight (number), historicalBucketWeight (number), recentBucketWeight (number), and consistencyWeight (number) fields",
+        "id": "REQ-64",
+        "summary": "Redesign the PredictionAndResults component layout to display Strategy Mode prominently at the top, followed by a six-row display showing all odds with their corresponding real-time calculated implied probabilities (odds/implied pairs for contenders #1-#6)",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/types/storage.ts"
+          "frontend/src/components/PredictionAndResults.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/types/storage.ts"
+          "frontend/src/components/PredictionAndResults.tsx"
         ]
       },
       {
-        "id": "REQ-37",
-        "summary": "Add calibrationScalar (number), confidenceScalingFactor (number), recentAccuracyWindow (number), driftDetectionState (object or appropriate type), and raceCount (number) fields to the ModelState interface in frontend/src/types/storage.ts",
+        "id": "REQ-65",
+        "summary": "Create a Primary Panel section in PredictionAndResults that displays the recommended pick with the label 'BEST BET: #X' (where X is the contender number 1-6), showing Predicted Probability (adjusted probability from prediction engine), Implied Probability (baseline 1/odds), Value Edge (adjusted minus implied), Confidence Level (High/Medium/Low with visual indicator), and Recommended Bet (dollar amount with bet sizing logic)",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/types/storage.ts"
+          "frontend/src/components/PredictionAndResults.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/types/storage.ts"
+          "frontend/src/components/PredictionAndResults.tsx"
         ]
       },
       {
-        "id": "REQ-38",
-        "summary": "Update frontend/src/lib/storage.ts AsyncStorage implementation to initialize modelState with default values for all fields (signalWeights with default weight values, calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, raceCount) when no existing modelState is found in localStorage",
+        "id": "REQ-66",
+        "summary": "Create a Secondary Panel section in PredictionAndResults that displays a Signal Breakdown showing four individual signal contributions: Odds Signal (baseline probability contribution), Historical Bucket Signal (bucket win delta contribution), Recent Bucket Signal (recent session delta contribution), and Consistency Signal (consistency modifier contribution from variance)",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/storage.ts"
+          "frontend/src/components/PredictionAndResults.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/lib/storage.ts"
+          "frontend/src/components/PredictionAndResults.tsx"
         ]
       },
       {
-        "id": "REQ-39",
-        "summary": "Add a writeModelState function to frontend/src/lib/storage.ts that accepts a ModelState object and persists it to AsyncStorage under the 'modelState' key with immutability enforcement",
+        "id": "REQ-67",
+        "summary": "Add optional informational indicators to the PredictionAndResults screen showing 'Hot Odds Bucket' (the odds bucket with the best recent performance) and 'Trap Odds Bucket' (the odds bucket with the worst recent performance or highest variance), displaying these in a non-intrusive way that doesn't interfere with the primary workflow",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/storage.ts"
+          "frontend/src/components/PredictionAndResults.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/lib/storage.ts"
+          "frontend/src/components/PredictionAndResults.tsx"
         ]
       },
       {
-        "id": "REQ-40",
-        "summary": "Update frontend/src/lib/statsCalculator.ts to add functions that compute updated signal weights and calibration parameters from race records, preparing for future integration with the prediction system",
+        "id": "REQ-68",
+        "summary": "Update the signal breakdown calculation logic in statsCalculator.ts to return individual signal components (odds signal, historical bucket signal, recent bucket signal, consistency signal) as separate numeric values that can be displayed in the Secondary Panel, ensuring these values represent the additive or multiplicative contributions to the final adjusted probability",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/lib/statsCalculator.ts"
         ],
         "matchedFiles": [
           "frontend/src/lib/statsCalculator.ts"
+        ]
+      },
+      {
+        "id": "REQ-69",
+        "summary": "Restructure the PredictionAndResults component layout hierarchy to organize content into three distinct visual sections: (1) Header section with Strategy Mode and full odds/implied probability display, (2) Primary Panel with recommended bet details, (3) Secondary Panel with signal breakdown and optional bucket indicators, ensuring clear visual hierarchy and spacing between sections",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/PredictionAndResults.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/PredictionAndResults.tsx"
         ]
       }
     ]
@@ -72,9 +83,8 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/components/PredictionAndResults.tsx",
     "frontend/src/lib/statsCalculator.ts",
-    "frontend/src/lib/storage.ts",
-    "frontend/src/types/storage.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

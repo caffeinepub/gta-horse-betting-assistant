@@ -20,64 +20,60 @@ export interface RaceRecord {
   readonly impliedProbabilities: readonly number[];
   readonly strategyMode: string;
   readonly predictedProbabilities: readonly number[];
+  readonly valueEdge: readonly number[];
+  readonly confidenceLevel: 'high' | 'medium' | 'low';
   readonly signalBreakdown: readonly SignalData[];
   readonly recommendedContender: number;
   readonly recommendedBetSize: number;
-  readonly modelWeightsSnapshot: Readonly<ModelWeights>;
+  readonly modelWeightsSnapshot: ModelWeights;
   readonly actualFirst: number;
   readonly actualSecond: number;
   readonly actualThird: number;
   readonly profitLoss: number;
 }
 
+/**
+ * Input type for creating a new race record
+ * Used before freezing the record
+ */
+export interface RaceRecordInput {
+  odds: number[];
+  impliedProbabilities: number[];
+  strategyMode: string;
+  predictedProbabilities: number[];
+  valueEdge: number[];
+  confidenceLevel: 'high' | 'medium' | 'low';
+  signalBreakdown: SignalData[];
+  recommendedContender: number;
+  recommendedBetSize: number;
+  modelWeightsSnapshot: ModelWeights;
+  actualFirst: number;
+  actualSecond: number;
+  actualThird: number;
+  profitLoss: number;
+}
+
+/**
+ * Signal data for a single contender
+ */
 export interface SignalData {
-  readonly contenderIndex: number;
-  readonly signalStrength: number;
-  readonly confidence: number;
+  contenderIndex: number;
+  signalStrength: number;
+  confidence: number;
 }
 
+/**
+ * Model weights snapshot at time of prediction
+ */
 export interface ModelWeights {
-  readonly oddsWeight: number;
-  readonly formWeight: number;
-  readonly trustWeight: number;
-}
-
-/**
- * Signal weights for the machine learning model's weighting system
- */
-export interface SignalWeights {
   oddsWeight: number;
-  historicalBucketWeight: number;
-  recentBucketWeight: number;
-  consistencyWeight: number;
+  formWeight: number;
+  trustWeight: number;
 }
 
 /**
- * Drift detection state for tracking model performance degradation
+ * Cumulative betting history statistics
  */
-export interface DriftDetectionState {
-  baselineAccuracy: number;
-  currentAccuracy: number;
-  driftScore: number;
-  lastDriftCheck: number;
-}
-
-/**
- * Model state with comprehensive signal weights and learning parameters
- */
-export interface ModelState {
-  lastUpdated: number;
-  totalRacesProcessed: number;
-  learningRate: number;
-  weights: ModelWeights;
-  signalWeights: SignalWeights;
-  calibrationScalar: number;
-  confidenceScalingFactor: number;
-  recentAccuracyWindow: number;
-  driftDetectionState: DriftDetectionState;
-  raceCount: number;
-}
-
 export interface BettingHistory {
   cumulativeROI: number;
   totalRaces: number;
@@ -89,14 +85,15 @@ export interface BettingHistory {
 }
 
 /**
- * Odds bucket with eight required statistical fields
- * Tracks performance for a specific odds range
+ * Statistics for a single odds bucket
+ * Nine required fields including averageImpliedProbability
  */
 export interface OddsBucket {
   totalRaces: number;
   wins: number;
   top3Finishes: number;
   totalImpliedProbability: number;
+  averageImpliedProbability: number;
   actualWinRate: number;
   roiIfFlatBet: number;
   varianceScore: number;
@@ -104,8 +101,7 @@ export interface OddsBucket {
 }
 
 /**
- * Odds bucket statistics with exactly four bucket ranges
- * Keys: '1-2', '3-5', '6-10', '11-30'
+ * Statistics for all four odds buckets
  */
 export interface OddsBucketStats {
   '1-2': OddsBucket;
@@ -115,19 +111,65 @@ export interface OddsBucketStats {
 }
 
 /**
- * Input data for creating a new race record
+ * Signal weights for the prediction model
  */
-export interface RaceRecordInput {
-  odds: number[];
-  impliedProbabilities: number[];
-  strategyMode: string;
-  predictedProbabilities: number[];
-  signalBreakdown: SignalData[];
-  recommendedContender: number;
-  recommendedBetSize: number;
-  modelWeightsSnapshot: ModelWeights;
-  actualFirst: number;
-  actualSecond: number;
-  actualThird: number;
-  profitLoss: number;
+export interface SignalWeights {
+  oddsWeight: number;
+  historicalBucketWeight: number;
+  recentBucketWeight: number;
+  consistencyWeight: number;
+}
+
+/**
+ * Drift detection state
+ */
+export interface DriftDetectionState {
+  baselineAccuracy: number;
+  currentAccuracy: number;
+  driftScore: number;
+  lastDriftCheck: number;
+}
+
+/**
+ * Complete model state
+ */
+export interface ModelState {
+  lastUpdated: number;
+  totalRacesProcessed: number;
+  signalWeights: SignalWeights;
+  calibrationScalar: number;
+  confidenceScalingFactor: number;
+  recentAccuracyWindow: number;
+  driftDetectionState: DriftDetectionState;
+  raceCount: number;
+}
+
+/**
+ * Confidence-segmented statistics
+ */
+export interface ConfidenceStats {
+  high: {
+    totalRaces: number;
+    wins: number;
+    winRate: number;
+    totalProfit: number;
+    totalInvested: number;
+    roi: number;
+  };
+  medium: {
+    totalRaces: number;
+    wins: number;
+    winRate: number;
+    totalProfit: number;
+    totalInvested: number;
+    roi: number;
+  };
+  low: {
+    totalRaces: number;
+    wins: number;
+    winRate: number;
+    totalProfit: number;
+    totalInvested: number;
+    roi: number;
+  };
 }

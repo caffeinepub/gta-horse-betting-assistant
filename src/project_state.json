@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 13,
+  "projectStateVersion": 21,
   "summary": "GTA Online horse betting assistant that anchors predictions to odds, learns from race outcomes, improves probability calibration and ROI through value detection, updates internal trust weights, and resets after every race. Primary workflow: Enter Odds → Get Pick → Log Results → Learn → Reset → Repeat.",
   "architectural_notes": [
     "Odds-anchored prediction model as core engine",
@@ -248,6 +248,238 @@
         "REQ-40"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-replace-the-oddsentryform-component-with-a-new-fixed-six-row-odds-entry-interface-display-exactly-six-numbered-rows-1-through-6-each-containing-a-single-odds-input-field-formatted-as-1-remove-all-horse-name-input-fields-and-dynamic-add-remove-row-functionality",
+      "title": "Replace the OddsEntryForm component with a new fixed six-row odds entry interface. Display exactly six numbered rows (#1 through #6), each containing a single odds input field formatted as '[ ] /1'. Remove all horse name input fields and dynamic add/remove row functionality.",
+      "reqIds": [
+        "REQ-41"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-odds-input-validation-that-accepts-only-integers-in-the-range-1-30-reject-non-integer-values-values-less-than-1-and-values-greater-than-30-display-validation-feedback-when-invalid-input-is-entered",
+      "title": "Implement odds input validation that accepts only integers in the range 1–30. Reject non-integer values, values less than 1, and values greater than 30. Display validation feedback when invalid input is entered.",
+      "reqIds": [
+        "REQ-42"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-auto-focus-behavior-where-focus-starts-on-the-1-odds-field-when-the-screen-loads-pressing-enter-after-entering-a-valid-odds-value-automatically-advances-focus-to-the-next-field-1-2-3-4-5-6-pressing-enter-after-filling-the-6-field-automatically-submits-the-form",
+      "title": "Implement auto-focus behavior where focus starts on the #1 odds field when the screen loads. Pressing Enter after entering a valid odds value automatically advances focus to the next field (#1 → #2 → #3 → #4 → #5 → #6). Pressing Enter after filling the #6 field automatically submits the form.",
+      "reqIds": [
+        "REQ-43"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-disable-the-submit-button-enter-calculate-pick-until-all-six-odds-fields-contain-valid-integer-values-in-the-range-1-30-enable-the-button-only-when-all-six-fields-are-filled-with-valid-odds",
+      "title": "Disable the submit button (ENTER / CALCULATE PICK) until all six odds fields contain valid integer values in the range 1-30. Enable the button only when all six fields are filled with valid odds.",
+      "reqIds": [
+        "REQ-44"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-display-real-time-calculated-implied-probability-for-each-horse-next-to-its-odds-input-field-calculate-implied-probability-as-1-odds-value-update-the-displayed-probability-immediately-as-the-user-types-valid-odds-values",
+      "title": "Display real-time calculated implied probability for each horse next to its odds input field. Calculate implied probability as 1 / odds value. Update the displayed probability immediately as the user types valid odds values.",
+      "reqIds": [
+        "REQ-45"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-display-the-total-implied-probability-by-summing-all-six-individual-implied-probabilities-update-this-total-in-real-time-as-odds-values-change-show-an-overround-warning-when-the-total-implied-probability-exceeds-100-indicating-bookmaker-margin",
+      "title": "Display the total implied probability by summing all six individual implied probabilities. Update this total in real-time as odds values change. Show an overround warning when the total implied probability exceeds 100%, indicating bookmaker margin.",
+      "reqIds": [
+        "REQ-46"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-strategy-mode-selector-with-four-options-safe-balanced-value-aggressive-persist-the-selected-strategy-mode-across-race-entries-until-the-user-explicitly-changes-it-include-the-selected-strategy-mode-in-the-race-data-passed-to-the-prediction-screen",
+      "title": "Add a strategy mode selector with four options: Safe, Balanced, Value, Aggressive. Persist the selected strategy mode across race entries until the user explicitly changes it. Include the selected strategy mode in the race data passed to the prediction screen.",
+      "reqIds": [
+        "REQ-47"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-label-the-submit-button-enter-calculate-pick-when-pressed-with-all-six-valid-odds-entered-immediately-transition-to-the-prediction-screen-combined-prediction-results-screen-with-the-entered-odds-data-and-selected-strategy-mode",
+      "title": "Label the submit button 'ENTER / CALCULATE PICK'. When pressed with all six valid odds entered, immediately transition to the Prediction screen (combined Prediction + Results screen) with the entered odds data and selected strategy mode.",
+      "reqIds": [
+        "REQ-48"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-bettingworkflow-component-to-handle-the-new-six-odds-only-data-format-from-oddsentryform-ensure-the-workflow-correctly-transitions-from-odds-entry-to-prediction-results-with-only-odds-values-no-horse-names-and-strategy-mode",
+      "title": "Update the BettingWorkflow component to handle the new six-odds-only data format from OddsEntryForm. Ensure the workflow correctly transitions from Odds Entry to Prediction + Results with only odds values (no horse names) and strategy mode.",
+      "reqIds": [
+        "REQ-49"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-predictionandresults-component-to-handle-race-data-containing-only-six-odds-values-and-strategy-mode-no-horse-names-generate-temporary-display-labels-1-2-etc-for-presentation-purposes-only-without-storing-or-passing-these-identifiers-to-the-learning-system",
+      "title": "Update PredictionAndResults component to handle race data containing only six odds values and strategy mode (no horse names). Generate temporary display labels (#1, #2, etc.) for presentation purposes only, without storing or passing these identifiers to the learning system.",
+      "reqIds": [
+        "REQ-50"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-prediction-engine-function-in-frontend-src-lib-statscalculator-ts-that-implements-the-five-step-probability-adjustment-algorithm-1-compute-implied-probabilities-from-odds-as-1-odds-for-each-contender-2-assign-each-contender-to-its-odds-bucket-1-2-3-5-6-10-11-30-using-the-existing-bucket-classification-logic-3-retrieve-bucket-statistics-from-asyncstorage-oddsbucketstats-including-actualwinrate-averageimpliedprobability-for-computing-bucket-win-delta-recentwindowperformance-for-recent-session-delta-and-variancescore-for-bucket-variance-4-calculate-adjusted-probability-for-each-contender-using-the-formula-adjusted-implied-1-historicalbucketweight-bucket-win-delta-recentbucketweight-recent-delta-consistencyweight-consistency-modifier-where-weights-are-retrieved-from-modelstate-signalweights-5-normalize-all-adjusted-probabilities-so-they-sum-to-exactly-100",
+      "title": "Create a prediction engine function in frontend/src/lib/statsCalculator.ts that implements the five-step probability adjustment algorithm: (1) Compute implied probabilities from odds as 1/odds for each contender, (2) Assign each contender to its odds bucket (1-2, 3-5, 6-10, 11-30) using the existing bucket classification logic, (3) Retrieve bucket statistics from AsyncStorage oddsBucketStats including actualWinRate, averageImpliedProbability for computing Bucket Win Delta, recentWindowPerformance for Recent Session Delta, and varianceScore for Bucket Variance, (4) Calculate adjusted probability for each contender using the formula: Adjusted = Implied × (1 + historicalBucketWeight × Bucket Win Delta + recentBucketWeight × Recent Delta + consistencyWeight × Consistency Modifier), where weights are retrieved from modelState.signalWeights, (5) Normalize all adjusted probabilities so they sum to exactly 100%",
+      "reqIds": [
+        "REQ-51"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-predictionandresults-component-in-frontend-src-components-predictionandresults-tsx-to-replace-the-current-probability-adjustment-logic-with-the-new-five-step-prediction-engine-function-from-statscalculator-ts-retrieving-modelstate-from-asyncstorage-to-access-signal-weights-before-generating-predictions",
+      "title": "Update PredictionAndResults component in frontend/src/components/PredictionAndResults.tsx to replace the current probability adjustment logic with the new five-step prediction engine function from statsCalculator.ts, retrieving modelState from AsyncStorage to access signal weights before generating predictions",
+      "reqIds": [
+        "REQ-52"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-helper-functions-to-frontend-src-lib-statscalculator-ts-to-compute-bucket-win-delta-actualwinrate-averageimpliedprobability-extract-recent-session-delta-from-recentwindowperformance-and-derive-a-consistency-modifier-from-variancescore-making-these-calculations-reusable-for-the-prediction-engine",
+      "title": "Add helper functions to frontend/src/lib/statsCalculator.ts to compute Bucket Win Delta (actualWinRate - averageImpliedProbability), extract Recent Session Delta from recentWindowPerformance, and derive a Consistency Modifier from varianceScore, making these calculations reusable for the prediction engine",
+      "reqIds": [
+        "REQ-53"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-src-lib-statscalculator-ts-to-calculate-and-store-averageimpliedprobability-for-each-odds-bucket-when-computing-bucket-statistics-from-race-records-enabling-bucket-win-delta-calculation-in-the-prediction-engine",
+      "title": "Update frontend/src/lib/statsCalculator.ts to calculate and store averageImpliedProbability for each odds bucket when computing bucket statistics from race records, enabling Bucket Win Delta calculation in the prediction engine",
+      "reqIds": [
+        "REQ-54"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-src-types-storage-ts-to-add-averageimpliedprobability-as-a-required-number-field-in-the-oddsbucketstats-interface-for-each-bucket",
+      "title": "Update frontend/src/types/storage.ts to add averageImpliedProbability as a required number field in the OddsBucketStats interface for each bucket",
+      "reqIds": [
+        "REQ-55"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-valueedge-field-to-the-prediction-result-data-model-in-frontend-src-lib-statscalculator-ts-calculate-value-edge-for-each-contender-as-adjusted-probability-minus-implied-probability-store-value-edge-alongside-adjusted-probability-in-prediction-results",
+      "title": "Add valueEdge field to the prediction result data model in frontend/src/lib/statsCalculator.ts. Calculate Value Edge for each contender as Adjusted Probability minus Implied Probability. Store Value Edge alongside adjusted probability in prediction results.",
+      "reqIds": [
+        "REQ-56"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-strategy-mode-selection-logic-in-frontend-src-lib-statscalculator-ts-with-four-distinct-algorithms-safe-mode-selects-the-contender-with-highest-adjusted-probability-balanced-mode-maximizes-a-weighted-blend-of-adjusted-probability-and-value-edge-value-mode-selects-the-contender-with-highest-positive-value-edge-above-a-defined-threshold-aggressive-mode-favors-contenders-in-high-odds-buckets-6-10-11-30-with-strong-positive-value-edge-return-recommendation-object-with-skip-this-race-flag-if-no-contender-has-meaningful-positive-edge",
+      "title": "Implement strategy mode selection logic in frontend/src/lib/statsCalculator.ts with four distinct algorithms: Safe mode selects the contender with highest Adjusted Probability; Balanced mode maximizes a weighted blend of Adjusted Probability and Value Edge; Value mode selects the contender with highest positive Value Edge above a defined threshold; Aggressive mode favors contenders in high-odds buckets (6-10, 11-30) with strong positive Value Edge. Return recommendation object with 'SKIP THIS RACE' flag if no contender has meaningful positive edge.",
+      "reqIds": [
+        "REQ-57"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-confidence-scoring-system-in-frontend-src-lib-statscalculator-ts-that-evaluates-bucket-sample-size-variance-score-recent-model-accuracy-from-recentaccuracywindow-and-calibration-health-from-calibrationscalar-output-confidence-level-as-high-medium-or-low-based-on-composite-assessment-of-these-four-factors-define-thresholds-for-each-confidence-tier",
+      "title": "Create confidence scoring system in frontend/src/lib/statsCalculator.ts that evaluates bucket sample size, variance score, recent model accuracy from recentAccuracyWindow, and calibration health from calibrationScalar. Output confidence level as 'high', 'medium', or 'low' based on composite assessment of these four factors. Define thresholds for each confidence tier.",
+      "reqIds": [
+        "REQ-58"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-adaptive-bet-sizing-algorithm-in-frontend-src-lib-statscalculator-ts-with-hard-limits-of-1-000-minimum-10-000-maximum-and-1-000-increments-calculate-recommended-bet-size-based-on-value-edge-strength-confidence-level-high-medium-low-calibrationscalar-from-modelstate-and-recent-accuracy-from-recentaccuracywindow-automatically-scale-bets-downward-when-driftdetectionstate-indicates-drift-low-confidence-must-automatically-reduce-bet-sizing-below-normal-levels",
+      "title": "Implement adaptive bet sizing algorithm in frontend/src/lib/statsCalculator.ts with hard limits of $1,000 minimum, $10,000 maximum, and $1,000 increments. Calculate recommended bet size based on value edge strength, confidence level (high/medium/low), calibrationScalar from modelState, and recent accuracy from recentAccuracyWindow. Automatically scale bets downward when driftDetectionState indicates drift. Low confidence must automatically reduce bet sizing below normal levels.",
+      "reqIds": [
+        "REQ-59"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-predictionandresults-component-in-frontend-src-components-predictionandresults-tsx-to-integrate-the-new-strategy-mode-selection-confidence-scoring-and-adaptive-bet-sizing-logic-display-value-edge-for-each-contender-show-the-confidence-level-high-medium-low-with-visual-indicator-display-the-calculated-recommended-bet-size-and-handle-skip-this-race-recommendations-by-showing-a-clear-message-advising-the-user-not-to-bet-on-this-race",
+      "title": "Update PredictionAndResults component in frontend/src/components/PredictionAndResults.tsx to integrate the new strategy mode selection, confidence scoring, and adaptive bet sizing logic. Display Value Edge for each contender, show the confidence level (High/Medium/Low) with visual indicator, display the calculated recommended bet size, and handle SKIP THIS RACE recommendations by showing a clear message advising the user not to bet on this race.",
+      "reqIds": [
+        "REQ-60"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-user-bet-size-override-interface-in-predictionandresults-component-using-a-stepper-or-slider-control-allow-users-to-adjust-the-recommended-bet-size-within-the-1-000-10-000-range-in-1-000-increments-treat-the-user-adjusted-amount-as-the-true-betting-amount-for-race-record-logging-and-profit-loss-calculation-display-both-the-system-recommended-bet-size-and-the-user-adjusted-bet-size-clearly",
+      "title": "Add user bet size override interface in PredictionAndResults component using a stepper or slider control. Allow users to adjust the recommended bet size within the $1,000-$10,000 range in $1,000 increments. Treat the user-adjusted amount as the true betting amount for race record logging and profit/loss calculation. Display both the system-recommended bet size and the user-adjusted bet size clearly.",
+      "reqIds": [
+        "REQ-61"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-racerecord-type-definition-in-frontend-src-types-storage-ts-to-include-confidencelevel-field-string-high-medium-low-and-valueedge-field-array-of-6-numbers-representing-value-edge-for-each-contender-ensure-these-fields-are-saved-when-logging-race-outcomes",
+      "title": "Update the RaceRecord type definition in frontend/src/types/storage.ts to include confidenceLevel field (string: 'high' | 'medium' | 'low') and valueEdge field (array of 6 numbers representing Value Edge for each contender). Ensure these fields are saved when logging race outcomes.",
+      "reqIds": [
+        "REQ-62"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-roidashboard-component-in-frontend-src-components-roidashboard-tsx-to-display-aggregate-statistics-grouped-by-confidence-level-show-total-races-win-rate-and-roi-separately-for-high-medium-and-low-confidence-predictions-allowing-users-to-evaluate-system-performance-across-confidence-tiers",
+      "title": "Update ROIDashboard component in frontend/src/components/ROIDashboard.tsx to display aggregate statistics grouped by confidence level. Show total races, win rate, and ROI separately for high, medium, and low confidence predictions, allowing users to evaluate system performance across confidence tiers.",
+      "reqIds": [
+        "REQ-63"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-redesign-the-predictionandresults-component-layout-to-display-strategy-mode-prominently-at-the-top-followed-by-a-six-row-display-showing-all-odds-with-their-corresponding-real-time-calculated-implied-probabilities-odds-implied-pairs-for-contenders-1-6",
+      "title": "Redesign the PredictionAndResults component layout to display Strategy Mode prominently at the top, followed by a six-row display showing all odds with their corresponding real-time calculated implied probabilities (odds/implied pairs for contenders #1-#6)",
+      "reqIds": [
+        "REQ-64"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-primary-panel-section-in-predictionandresults-that-displays-the-recommended-pick-with-the-label-best-bet-x-where-x-is-the-contender-number-1-6-showing-predicted-probability-adjusted-probability-from-prediction-engine-implied-probability-baseline-1-odds-value-edge-adjusted-minus-implied-confidence-level-high-medium-low-with-visual-indicator-and-recommended-bet-dollar-amount-with-bet-sizing-logic",
+      "title": "Create a Primary Panel section in PredictionAndResults that displays the recommended pick with the label 'BEST BET: #X' (where X is the contender number 1-6), showing Predicted Probability (adjusted probability from prediction engine), Implied Probability (baseline 1/odds), Value Edge (adjusted minus implied), Confidence Level (High/Medium/Low with visual indicator), and Recommended Bet (dollar amount with bet sizing logic)",
+      "reqIds": [
+        "REQ-65"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-secondary-panel-section-in-predictionandresults-that-displays-a-signal-breakdown-showing-four-individual-signal-contributions-odds-signal-baseline-probability-contribution-historical-bucket-signal-bucket-win-delta-contribution-recent-bucket-signal-recent-session-delta-contribution-and-consistency-signal-consistency-modifier-contribution-from-variance",
+      "title": "Create a Secondary Panel section in PredictionAndResults that displays a Signal Breakdown showing four individual signal contributions: Odds Signal (baseline probability contribution), Historical Bucket Signal (bucket win delta contribution), Recent Bucket Signal (recent session delta contribution), and Consistency Signal (consistency modifier contribution from variance)",
+      "reqIds": [
+        "REQ-66"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-optional-informational-indicators-to-the-predictionandresults-screen-showing-hot-odds-bucket-the-odds-bucket-with-the-best-recent-performance-and-trap-odds-bucket-the-odds-bucket-with-the-worst-recent-performance-or-highest-variance-displaying-these-in-a-non-intrusive-way-that-doesn-t-interfere-with-the-primary-workflow",
+      "title": "Add optional informational indicators to the PredictionAndResults screen showing 'Hot Odds Bucket' (the odds bucket with the best recent performance) and 'Trap Odds Bucket' (the odds bucket with the worst recent performance or highest variance), displaying these in a non-intrusive way that doesn't interfere with the primary workflow",
+      "reqIds": [
+        "REQ-67"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-signal-breakdown-calculation-logic-in-statscalculator-ts-to-return-individual-signal-components-odds-signal-historical-bucket-signal-recent-bucket-signal-consistency-signal-as-separate-numeric-values-that-can-be-displayed-in-the-secondary-panel-ensuring-these-values-represent-the-additive-or-multiplicative-contributions-to-the-final-adjusted-probability",
+      "title": "Update the signal breakdown calculation logic in statsCalculator.ts to return individual signal components (odds signal, historical bucket signal, recent bucket signal, consistency signal) as separate numeric values that can be displayed in the Secondary Panel, ensuring these values represent the additive or multiplicative contributions to the final adjusted probability",
+      "reqIds": [
+        "REQ-68"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-restructure-the-predictionandresults-component-layout-hierarchy-to-organize-content-into-three-distinct-visual-sections-1-header-section-with-strategy-mode-and-full-odds-implied-probability-display-2-primary-panel-with-recommended-bet-details-3-secondary-panel-with-signal-breakdown-and-optional-bucket-indicators-ensuring-clear-visual-hierarchy-and-spacing-between-sections",
+      "title": "Restructure the PredictionAndResults component layout hierarchy to organize content into three distinct visual sections: (1) Header section with Strategy Mode and full odds/implied probability display, (2) Primary Panel with recommended bet details, (3) Secondary Panel with signal breakdown and optional bucket indicators, ensuring clear visual hierarchy and spacing between sections",
+      "reqIds": [
+        "REQ-69"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -414,6 +646,48 @@
     {
       "id": "AR-32",
       "summary": "Define modelState storage schema with signalWeights (oddsWeight, historicalBucketWeight, recentBucketWeight, consistencyWeight), calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, and raceCount",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-33",
+      "summary": "Implement six-row odds entry screen with auto-focus, auto-advance on Enter, integer validation (1-30), real-time implied probability display, overround warning, strategy mode selector, and disabled submit button until all six fields are filled",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-34",
+      "summary": "Implement prediction engine that computes implied probabilities from odds, assigns contenders to odds buckets, retrieves bucket statistics (Bucket Win Delta, Recent Session Delta, Bucket Variance), calculates adjusted probabilities using historicalBucketWeight, recentBucketWeight, and consistencyWeight modifiers, and normalizes probabilities to total 100%",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-35",
+      "summary": "Implement Value Edge calculation as Adjusted Probability minus Implied Probability for each contender",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-36",
+      "summary": "Implement strategy mode selection logic: Safe (highest Adjusted Probability), Balanced (maximize blend of Adjusted Probability and Value Edge), Value (highest positive Value Edge above threshold), Aggressive (favor high-odds buckets with strong positive Value Edge). Return SKIP THIS RACE if no contender has meaningful positive edge.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-37",
+      "summary": "Implement confidence calculation system based on bucket sample size, variance, recent model accuracy, and calibration health, outputting High, Medium, or Low confidence levels. Low confidence must automatically reduce bet sizing.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-38",
+      "summary": "Implement bet sizing system with $1,000 minimum, $10,000 maximum, $1,000 increments. Bet size formula depends on edge strength, confidence, calibration scalar, and recent accuracy. Automatically scale bets downward when drift detection triggers. Allow user override via stepper or slider, treating adjusted amount as true betting amount.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-39",
+      "summary": "Design and implement Prediction Screen display layout showing Strategy Mode, all odds + implied probabilities, Primary panel (BEST BET #X, Predicted Probability, Implied Probability, Value Edge, Confidence, Recommended Bet), Secondary panel (Signal breakdown: Odds signal, Historical bucket signal, Recent bucket signal, Consistency signal), and optional indicators (Hot Odds Bucket, Trap Odds Bucket)",
       "reqIds": [],
       "status": "pending"
     }

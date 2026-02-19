@@ -81,6 +81,8 @@ export function createRaceRecord(input: RaceRecordInput): RaceRecord {
     impliedProbabilities: [...input.impliedProbabilities],
     strategyMode: input.strategyMode,
     predictedProbabilities: [...input.predictedProbabilities],
+    valueEdge: [...input.valueEdge],
+    confidenceLevel: input.confidenceLevel,
     signalBreakdown: input.signalBreakdown.map(s => ({ ...s })),
     recommendedContender: input.recommendedContender,
     recommendedBetSize: input.recommendedBetSize,
@@ -130,12 +132,6 @@ export function readModelState(): ModelState {
   const defaultState: ModelState = {
     lastUpdated: Date.now(),
     totalRacesProcessed: 0,
-    learningRate: 0.01,
-    weights: {
-      oddsWeight: 0.4,
-      formWeight: 0.3,
-      trustWeight: 0.3,
-    },
     signalWeights: {
       oddsWeight: 0.35,
       historicalBucketWeight: 0.25,

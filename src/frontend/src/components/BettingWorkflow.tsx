@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, ClipboardCheck, TrendingUp } from 'lucide-react';
-import { OddsEntryForm, type HorseWithName } from './OddsEntryForm';
+import { OddsEntryForm, type OddsOnlyData } from './OddsEntryForm';
 import { PredictionAndResults } from './PredictionAndResults';
 import { Dashboard } from './Dashboard';
 import { WorkflowIndicator } from './WorkflowIndicator';
@@ -11,11 +11,11 @@ type Screen = 'dashboard' | 'odds-entry' | 'prediction-results';
 
 export function BettingWorkflow() {
   const [phase, setPhase] = useState<WorkflowPhase>('entry');
-  const [horses, setHorses] = useState<HorseWithName[]>([]);
+  const [currentRaceData, setCurrentRaceData] = useState<OddsOnlyData | null>(null);
   const [activeScreen, setActiveScreen] = useState<Screen>('odds-entry');
 
-  const handleOddsSubmit = (submittedHorses: HorseWithName[]) => {
-    setHorses(submittedHorses);
+  const handleOddsSubmit = (data: OddsOnlyData) => {
+    setCurrentRaceData(data);
     setPhase('prediction');
     setActiveScreen('prediction-results');
   };
@@ -29,8 +29,8 @@ export function BettingWorkflow() {
   };
 
   const handleReset = () => {
-    // Completely clear all horse data - no carryover between races
-    setHorses([]);
+    // Clear all race data
+    setCurrentRaceData(null);
     setPhase('entry');
     setActiveScreen('odds-entry');
   };
@@ -76,7 +76,7 @@ export function BettingWorkflow() {
           <TabsTrigger 
             value="prediction-results" 
             className="flex items-center gap-2 py-3 font-bold text-sm"
-            disabled={horses.length === 0}
+            disabled={!currentRaceData}
           >
             <TrendingUp className="h-4 w-4" />
             Prediction + Results
@@ -92,9 +92,9 @@ export function BettingWorkflow() {
         </TabsContent>
 
         <TabsContent value="prediction-results" className="mt-6">
-          {horses.length > 0 ? (
+          {currentRaceData ? (
             <PredictionAndResults
-              horses={horses}
+              raceData={currentRaceData}
               onResultLogged={handleResultLogged}
               onReset={handleReset}
             />

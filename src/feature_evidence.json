@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-frontend-src-types-storage-ts-to-expand-the-modelstate-interface-with-a-nested-signalweights-object-containing-oddsweight-number-historicalbucketweight-number-recentbucketweight-number-and-consistencyweight-number-fields",
-      "featureTitle": "Update frontend/src/types/storage.ts to expand the ModelState interface with a nested signalWeights object containing oddsWeight (number), historicalBucketWeight (number), recentBucketWeight (number), and consistencyWeight (number) fields",
+      "featureId": "feature-redesign-the-predictionandresults-component-layout-to-display-strategy-mode-prominently-at-the-top-followed-by-a-six-row-display-showing-all-odds-with-their-corresponding-real-time-calculated-implied-probabilities-odds-implied-pairs-for-contenders-1-6",
+      "featureTitle": "Redesign the PredictionAndResults component layout to display Strategy Mode prominently at the top, followed by a six-row display showing all odds with their corresponding real-time calculated implied probabilities (odds/implied pairs for contenders #1-#6)",
       "files": [
-        "frontend/src/types/storage.ts"
+        "frontend/src/components/PredictionAndResults.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -15,15 +15,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-36"
+        "REQ-64"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-calibrationscalar-number-confidencescalingfactor-number-recentaccuracywindow-number-driftdetectionstate-object-or-appropriate-type-and-racecount-number-fields-to-the-modelstate-interface-in-frontend-src-types-storage-ts",
-      "featureTitle": "Add calibrationScalar (number), confidenceScalingFactor (number), recentAccuracyWindow (number), driftDetectionState (object or appropriate type), and raceCount (number) fields to the ModelState interface in frontend/src/types/storage.ts",
+      "featureId": "feature-create-a-primary-panel-section-in-predictionandresults-that-displays-the-recommended-pick-with-the-label-best-bet-x-where-x-is-the-contender-number-1-6-showing-predicted-probability-adjusted-probability-from-prediction-engine-implied-probability-baseline-1-odds-value-edge-adjusted-minus-implied-confidence-level-high-medium-low-with-visual-indicator-and-recommended-bet-dollar-amount-with-bet-sizing-logic",
+      "featureTitle": "Create a Primary Panel section in PredictionAndResults that displays the recommended pick with the label 'BEST BET: #X' (where X is the contender number 1-6), showing Predicted Probability (adjusted probability from prediction engine), Implied Probability (baseline 1/odds), Value Edge (adjusted minus implied), Confidence Level (High/Medium/Low with visual indicator), and Recommended Bet (dollar amount with bet sizing logic)",
       "files": [
-        "frontend/src/types/storage.ts"
+        "frontend/src/components/PredictionAndResults.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -33,15 +33,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-37"
+        "REQ-65"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-frontend-src-lib-storage-ts-asyncstorage-implementation-to-initialize-modelstate-with-default-values-for-all-fields-signalweights-with-default-weight-values-calibrationscalar-confidencescalingfactor-recentaccuracywindow-driftdetectionstate-racecount-when-no-existing-modelstate-is-found-in-localstorage",
-      "featureTitle": "Update frontend/src/lib/storage.ts AsyncStorage implementation to initialize modelState with default values for all fields (signalWeights with default weight values, calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, raceCount) when no existing modelState is found in localStorage",
+      "featureId": "feature-create-a-secondary-panel-section-in-predictionandresults-that-displays-a-signal-breakdown-showing-four-individual-signal-contributions-odds-signal-baseline-probability-contribution-historical-bucket-signal-bucket-win-delta-contribution-recent-bucket-signal-recent-session-delta-contribution-and-consistency-signal-consistency-modifier-contribution-from-variance",
+      "featureTitle": "Create a Secondary Panel section in PredictionAndResults that displays a Signal Breakdown showing four individual signal contributions: Odds Signal (baseline probability contribution), Historical Bucket Signal (bucket win delta contribution), Recent Bucket Signal (recent session delta contribution), and Consistency Signal (consistency modifier contribution from variance)",
       "files": [
-        "frontend/src/lib/storage.ts"
+        "frontend/src/components/PredictionAndResults.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -51,15 +51,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-38"
+        "REQ-66"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-writemodelstate-function-to-frontend-src-lib-storage-ts-that-accepts-a-modelstate-object-and-persists-it-to-asyncstorage-under-the-modelstate-key-with-immutability-enforcement",
-      "featureTitle": "Add a writeModelState function to frontend/src/lib/storage.ts that accepts a ModelState object and persists it to AsyncStorage under the 'modelState' key with immutability enforcement",
+      "featureId": "feature-add-optional-informational-indicators-to-the-predictionandresults-screen-showing-hot-odds-bucket-the-odds-bucket-with-the-best-recent-performance-and-trap-odds-bucket-the-odds-bucket-with-the-worst-recent-performance-or-highest-variance-displaying-these-in-a-non-intrusive-way-that-doesn-t-interfere-with-the-primary-workflow",
+      "featureTitle": "Add optional informational indicators to the PredictionAndResults screen showing 'Hot Odds Bucket' (the odds bucket with the best recent performance) and 'Trap Odds Bucket' (the odds bucket with the worst recent performance or highest variance), displaying these in a non-intrusive way that doesn't interfere with the primary workflow",
       "files": [
-        "frontend/src/lib/storage.ts"
+        "frontend/src/components/PredictionAndResults.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -69,13 +69,13 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-39"
+        "REQ-67"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-frontend-src-lib-statscalculator-ts-to-add-functions-that-compute-updated-signal-weights-and-calibration-parameters-from-race-records-preparing-for-future-integration-with-the-prediction-system",
-      "featureTitle": "Update frontend/src/lib/statsCalculator.ts to add functions that compute updated signal weights and calibration parameters from race records, preparing for future integration with the prediction system",
+      "featureId": "feature-update-the-signal-breakdown-calculation-logic-in-statscalculator-ts-to-return-individual-signal-components-odds-signal-historical-bucket-signal-recent-bucket-signal-consistency-signal-as-separate-numeric-values-that-can-be-displayed-in-the-secondary-panel-ensuring-these-values-represent-the-additive-or-multiplicative-contributions-to-the-final-adjusted-probability",
+      "featureTitle": "Update the signal breakdown calculation logic in statsCalculator.ts to return individual signal components (odds signal, historical bucket signal, recent bucket signal, consistency signal) as separate numeric values that can be displayed in the Secondary Panel, ensuring these values represent the additive or multiplicative contributions to the final adjusted probability",
       "files": [
         "frontend/src/lib/statsCalculator.ts"
       ],
@@ -87,7 +87,25 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-40"
+        "REQ-68"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-restructure-the-predictionandresults-component-layout-hierarchy-to-organize-content-into-three-distinct-visual-sections-1-header-section-with-strategy-mode-and-full-odds-implied-probability-display-2-primary-panel-with-recommended-bet-details-3-secondary-panel-with-signal-breakdown-and-optional-bucket-indicators-ensuring-clear-visual-hierarchy-and-spacing-between-sections",
+      "featureTitle": "Restructure the PredictionAndResults component layout hierarchy to organize content into three distinct visual sections: (1) Header section with Strategy Mode and full odds/implied probability display, (2) Primary Panel with recommended bet details, (3) Secondary Panel with signal breakdown and optional bucket indicators, ensuring clear visual hierarchy and spacing between sections",
+      "files": [
+        "frontend/src/components/PredictionAndResults.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-69"
       ],
       "confidence": "high"
     }

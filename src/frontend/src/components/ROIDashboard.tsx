@@ -1,22 +1,28 @@
 import { useEffect, useState } from 'react';
 import { useBettingHistory } from '../hooks/useBettingHistory';
-import { getOddsBucketStats } from '../lib/storage';
+import { getOddsBucketStats, getRaces } from '../lib/storage';
 import { subscribeToStorageChanges } from '../lib/storage';
+import { calculateConfidenceStats } from '../lib/statsCalculator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Activity, Target, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, Target, BarChart3, Shield } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import type { OddsBucketStats } from '../types/storage';
+import type { OddsBucketStats, ConfidenceStats } from '../types/storage';
 
 export function ROIDashboard() {
   const { bettingHistory, isLoading } = useBettingHistory();
   const [bucketStats, setBucketStats] = useState<OddsBucketStats | null>(null);
+  const [confidenceStats, setConfidenceStats] = useState<ConfidenceStats | null>(null);
 
   // Load bucket stats and subscribe to changes
   useEffect(() => {
     const loadStats = () => {
       const stats = getOddsBucketStats();
       setBucketStats(stats);
+      
+      const races = getRaces();
+      const confStats = calculateConfidenceStats(races);
+      setConfidenceStats(confStats);
     };
 
     loadStats();
@@ -84,6 +90,78 @@ export function ROIDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Confidence-Segmented Statistics */}
+      {confidenceStats && totalRaces > 0 && (
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-lg font-black uppercase flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Confidence Performance
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {(['high', 'medium', 'low'] as const).map((level) => {
+              const stats = confidenceStats[level];
+              const hasData = stats.totalRaces > 0;
+              const isPositive = stats.roi > 0;
+              
+              const levelColor = {
+                high: 'text-accent',
+                medium: 'text-yellow-500',
+                low: 'text-orange-500',
+              }[level];
+
+              return (
+                <div
+                  key={level}
+                  className={`bg-muted/30 border rounded-lg p-3 ${
+                    !hasData ? 'opacity-50' : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={cn('text-sm font-black uppercase', levelColor)}>
+                        {level}
+                      </span>
+                      {!hasData && (
+                        <Badge variant="outline" className="text-xs">
+                          No Data
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-xs font-bold text-muted-foreground">
+                      {stats.totalRaces} races
+                    </span>
+                  </div>
+
+                  {hasData && (
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <div className="text-muted-foreground font-medium">Win Rate</div>
+                        <div className="font-black text-foreground">
+                          {stats.winRate.toFixed(1)}%
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground font-medium">ROI</div>
+                        <div
+                          className={`font-black ${
+                            isPositive ? 'text-accent' : 'text-destructive'
+                          }`}
+                        >
+                          {isPositive ? '+' : ''}
+                          {stats.roi.toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Odds Bucket Performance */}
       {bucketStats && totalRaces > 0 && (
@@ -168,4 +246,8 @@ export function ROIDashboard() {
       )}
     </div>
   );
+}
+
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(' ');
 }
