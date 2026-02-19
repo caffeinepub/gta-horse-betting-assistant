@@ -1,10 +1,10 @@
 /**
  * React hook for race storage operations
- * Provides async race logging with derived stats updates
+ * Provides async race logging with automatic bucket statistics recalculation
  */
 
 import { useState } from 'react';
-import { appendRace, updateDerivedStats, notifyStorageChange } from '../lib/storage';
+import { appendRace, rebuildDerivedStats, notifyStorageChange } from '../lib/storage';
 import type { RaceRecordInput } from '../types/storage';
 
 interface UseRaceStorageResult {
@@ -25,8 +25,8 @@ export function useRaceStorage(): UseRaceStorageResult {
       // Append race record (immutable)
       appendRace(raceData);
 
-      // Update derived statistics
-      updateDerivedStats();
+      // Rebuild all derived statistics including bucket stats
+      rebuildDerivedStats();
 
       // Notify listeners for real-time updates
       notifyStorageChange();

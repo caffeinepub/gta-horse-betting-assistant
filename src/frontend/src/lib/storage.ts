@@ -1,6 +1,6 @@
 /**
  * AsyncStorage wrapper for browser localStorage
- * Provides typed read/write operations with error handling
+ * Provides typed read/write operations with error handling and odds bucket statistics
  */
 
 import { StorageKeys } from '../types/storage';
@@ -10,7 +10,6 @@ import type {
   ModelState,
   BettingHistory,
   OddsBucketStats,
-  BucketTrustData,
 } from '../types/storage';
 import { deepFreeze } from './immutable';
 import { calculateBettingHistory, calculateOddsBucketStats } from './statsCalculator';
@@ -118,14 +117,70 @@ export function appendRace(raceInput: RaceRecordInput): void {
 }
 
 /**
- * Read model state from storage
+ * Read model state from storage with default initialization
+ */
+export function readModelState(): ModelState {
+  const stored = readFromStorage<ModelState>(StorageKeys.MODEL_STATE);
+  
+  if (stored) {
+    return stored;
+  }
+
+  // Initialize with sensible default values
+  const defaultState: ModelState = {
+    lastUpdated: Date.now(),
+    totalRacesProcessed: 0,
+    learningRate: 0.01,
+    weights: {
+      oddsWeight: 0.4,
+      formWeight: 0.3,
+      trustWeight: 0.3,
+    },
+    signalWeights: {
+      oddsWeight: 0.35,
+      historicalBucketWeight: 0.25,
+      recentBucketWeight: 0.25,
+      consistencyWeight: 0.15,
+    },
+    calibrationScalar: 1.0,
+    confidenceScalingFactor: 1.0,
+    recentAccuracyWindow: 20,
+    driftDetectionState: {
+      baselineAccuracy: 0,
+      currentAccuracy: 0,
+      driftScore: 0,
+      lastDriftCheck: Date.now(),
+    },
+    raceCount: 0,
+  };
+
+  return deepFreeze(defaultState);
+}
+
+/**
+ * Write model state to storage with immutability enforcement
+ */
+export function writeModelState(state: ModelState): boolean {
+  try {
+    const frozen = deepFreeze({ ...state });
+    writeToStorage(StorageKeys.MODEL_STATE, frozen);
+    notifyStorageChange();
+    return true;
+  } catch (error) {
+    console.error('Failed to write model state:', error);
+    return false;
+  }
+}
+
+/**
+ * Read model state from storage (legacy compatibility)
  */
 export function getModelState(): ModelState | null {
   return readFromStorage<ModelState>(StorageKeys.MODEL_STATE);
 }
 
 /**
- * Write model state to storage
+ * Write model state to storage (legacy compatibility)
  */
 export function setModelState(state: ModelState): void {
   writeToStorage(StorageKeys.MODEL_STATE, state);
@@ -149,29 +204,15 @@ export function setBettingHistory(history: BettingHistory): void {
  * Read odds bucket stats from storage
  */
 export function getOddsBucketStats(): OddsBucketStats | null {
-  const data = readFromStorage<{ buckets: Record<string, BucketTrustData>; lastUpdated: number }>(
-    StorageKeys.ODDS_BUCKET_STATS
-  );
-  if (!data) return null;
-
-  // Reconstruct Map from serialized data
-  const buckets = new Map<string, BucketTrustData>(Object.entries(data.buckets || {}));
-  return {
-    buckets,
-    lastUpdated: data.lastUpdated,
-  };
+  return readFromStorage<OddsBucketStats>(StorageKeys.ODDS_BUCKET_STATS);
 }
 
 /**
  * Write odds bucket stats to storage
  */
 export function setOddsBucketStats(stats: OddsBucketStats): void {
-  // Convert Map to object for serialization
-  const serializable = {
-    buckets: Object.fromEntries(stats.buckets),
-    lastUpdated: stats.lastUpdated,
-  };
-  writeToStorage(StorageKeys.ODDS_BUCKET_STATS, serializable);
+  const frozen = deepFreeze(stats);
+  writeToStorage(StorageKeys.ODDS_BUCKET_STATS, frozen);
 }
 
 /**

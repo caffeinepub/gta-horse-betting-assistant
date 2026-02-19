@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGetValueBets } from '../hooks/useQueries';
 import { useRaceStorage } from '../hooks/useRaceStorage';
+import { getOddsBucketStats } from '../lib/storage';
+import { classifyOddsToBucket } from '../lib/statsCalculator';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import type { Horse } from '../backend';
 import type { HorseWithName } from './OddsEntryForm';
-import type { RaceRecordInput, SignalData, ModelWeights } from '../types/storage';
+import type { RaceRecordInput, SignalData, ModelWeights, OddsBucketStats } from '../types/storage';
 import { cn } from '@/lib/utils';
 
 interface PredictionAndResultsProps {
@@ -21,7 +23,14 @@ interface PredictionAndResultsProps {
 
 export function PredictionAndResults({ horses, onResultLogged, onReset }: PredictionAndResultsProps) {
   const [selectedWinner, setSelectedWinner] = useState<string | null>(null);
+  const [bucketStats, setBucketStats] = useState<OddsBucketStats | null>(null);
   const { logRaceToStorage, isLogging } = useRaceStorage();
+
+  // Load bucket stats on mount
+  useEffect(() => {
+    const stats = getOddsBucketStats();
+    setBucketStats(stats);
+  }, []);
 
   // Convert to backend Horse type for value bet calculation
   const backendHorses: Horse[] = horses.map((h) => ({
@@ -32,17 +41,46 @@ export function PredictionAndResults({ horses, onResultLogged, onReset }: Predic
 
   const { data: valueBets, isLoading } = useGetValueBets(backendHorses);
 
-  // Calculate implied probabilities
-  const horsesWithProb = horses.map((h) => ({
-    ...h,
-    impliedProb: 1 / h.odds,
-  }));
+  // Calculate adjusted probabilities using bucket statistics
+  const horsesWithAdjustedProb = horses.map((h) => {
+    const impliedProb = 1 / h.odds;
+    
+    // If we have bucket stats, adjust probability based on bucket performance
+    if (bucketStats) {
+      const bucketKey = classifyOddsToBucket(h.odds);
+      const bucket = bucketStats[bucketKey];
+      
+      // Use bucket's actualWinRate and roiIfFlatBet to adjust implied probability
+      if (bucket.totalRaces > 5) {
+        // Adjustment factor based on bucket performance
+        const performanceFactor = bucket.actualWinRate / 100;
+        const roiFactor = 1 + (bucket.roiIfFlatBet / 100);
+        
+        // Combine factors to adjust probability
+        const adjustmentMultiplier = (performanceFactor + roiFactor) / 2;
+        const adjustedProb = impliedProb * adjustmentMultiplier;
+        
+        return {
+          ...h,
+          impliedProb,
+          adjustedProb: Math.max(0.01, Math.min(0.99, adjustedProb)),
+        };
+      }
+    }
+    
+    // No adjustment if insufficient data
+    return {
+      ...h,
+      impliedProb,
+      adjustedProb: impliedProb,
+    };
+  });
 
-  // Normalize probabilities
-  const totalImpliedProb = horsesWithProb.reduce((sum, h) => sum + h.impliedProb, 0);
-  const normalizedHorses = horsesWithProb.map((h) => ({
+  // Normalize adjusted probabilities to sum to 1.0
+  const totalAdjustedProb = horsesWithAdjustedProb.reduce((sum, h) => sum + h.adjustedProb, 0);
+  const normalizedHorses = horsesWithAdjustedProb.map((h) => ({
     ...h,
-    normalizedProb: (h.impliedProb / totalImpliedProb) * 100,
+    normalizedProb: (h.adjustedProb / totalAdjustedProb) * 100,
   }));
 
   // Sort by normalized probability (highest first)
@@ -67,9 +105,8 @@ export function PredictionAndResults({ horses, onResultLogged, onReset }: Predic
     // Find winner index and calculate placements
     const winnerIndex = horses.findIndex(h => h.name === selectedWinner);
     
-    // Calculate predicted probabilities
-    const totalImplied = horses.reduce((sum, horse) => sum + 1 / horse.odds, 0);
-    const predictedProbs = horses.map(h => (1 / h.odds) / totalImplied);
+    // Use normalized probabilities for prediction
+    const predictedProbs = normalizedHorses.map(h => h.normalizedProb / 100);
     const impliedProbs = horses.map(h => 1 / h.odds);
 
     // Find recommended contender (highest predicted probability)
@@ -108,7 +145,7 @@ export function PredictionAndResults({ horses, onResultLogged, onReset }: Predic
     const raceRecord: RaceRecordInput = {
       odds: horses.map(h => h.odds),
       impliedProbabilities: impliedProbs,
-      strategyMode: 'odds-anchored',
+      strategyMode: 'bucket-adjusted',
       predictedProbabilities: predictedProbs,
       signalBreakdown,
       recommendedContender,
@@ -121,163 +158,159 @@ export function PredictionAndResults({ horses, onResultLogged, onReset }: Predic
     };
 
     try {
-      // Log to AsyncStorage
+      // Log to AsyncStorage (triggers bucket stats recalculation)
       await logRaceToStorage(raceRecord);
       
-      toast.success('Race logged! Performance stats updated.');
+      toast.success('Race logged successfully!');
       onResultLogged();
     } catch (error) {
+      console.error('Failed to log race:', error);
       toast.error('Failed to log race result');
-      console.error('Race logging error:', error);
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Prediction Section */}
-      <div className="space-y-4">
-        <Card className="border-2 border-accent bg-accent/5">
-          <CardHeader>
-            <CardTitle className="text-2xl font-black uppercase flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-accent" />
-              Recommended Pick
-            </CardTitle>
-            <CardDescription className="text-base">
-              Based on odds-anchored probability analysis
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-8 w-3/4" />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="bg-card border-2 border-accent rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-3xl font-black uppercase text-accent">{topPick.name}</h3>
-                    <Badge variant="default" className="text-lg px-4 py-1 font-bold">
-                      {topPick.odds.toFixed(2)}:1
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-muted-foreground font-semibold">
-                      Win Probability: <span className="text-foreground font-bold">{topPick.normalizedProb.toFixed(1)}%</span>
-                    </span>
-                    {topPickIsValueBet && (
-                      <Badge variant="secondary" className="font-bold">
-                        VALUE BET
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                {!hasValueBets && (
-                  <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                    <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <p className="font-medium">
-                      No value bets detected. The odds accurately reflect probabilities. Consider betting on the favorite or skipping this race.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-2">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold uppercase">All Horses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {sortedHorses.map((horse) => (
-                <div
-                  key={horse.name}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-foreground">{horse.name}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground font-semibold">
-                      {horse.normalizedProb.toFixed(1)}%
-                    </span>
-                    <Badge variant="outline" className="font-bold">
-                      {horse.odds.toFixed(2)}:1
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Separator className="my-8" />
-
-      {/* Result Logging Section */}
-      <Card className="border-2">
+      <Card className="border-2 border-accent bg-accent/5">
         <CardHeader>
-          <CardTitle className="text-2xl font-black uppercase flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-accent" />
-            Log Race Result
+          <CardTitle className="text-xl font-black uppercase flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-accent" />
+            Recommended Pick
           </CardTitle>
-          <CardDescription className="text-base">
-            Select the winning horse to update the learning system
+          <CardDescription>
+            Based on {bucketStats ? 'bucket-adjusted' : 'implied'} probabilities
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            {horses.map((horse) => (
-              <button
-                key={horse.name}
-                onClick={() => handleSelectWinner(horse.name)}
-                disabled={isLogging}
-                className={cn(
-                  'p-4 rounded-lg border-2 text-left transition-all font-bold text-lg',
-                  'hover:border-accent hover:bg-accent/10',
-                  selectedWinner === horse.name
-                    ? 'border-accent bg-accent/20 scale-105'
-                    : 'border-border bg-card'
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <span>{horse.name}</span>
-                  <span className="text-sm text-muted-foreground font-semibold">
-                    {horse.odds.toFixed(2)}:1
-                  </span>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-card border-2 border-accent rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <div className="text-2xl font-black text-foreground">{topPick.name}</div>
+                    <div className="text-sm text-muted-foreground font-medium">
+                      Odds: {topPick.odds.toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-black text-accent">
+                      {topPick.normalizedProb.toFixed(1)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground font-medium uppercase">
+                      Win Probability
+                    </div>
+                  </div>
                 </div>
-              </button>
+                {topPickIsValueBet && (
+                  <Badge variant="default" className="mt-2">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    Value Bet
+                  </Badge>
+                )}
+              </div>
+
+              {hasValueBets && valueBets.length > 1 && (
+                <div className="bg-muted/50 border border-border rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div className="text-sm text-muted-foreground">
+                      <span className="font-bold">{valueBets.length} value bets</span> detected in this race
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* All Horses */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-black uppercase">All Horses</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {sortedHorses.map((horse, index) => (
+              <div
+                key={horse.name}
+                className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-lg font-black text-muted-foreground w-6">
+                    #{index + 1}
+                  </div>
+                  <div>
+                    <div className="font-bold text-foreground">{horse.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Odds: {horse.odds.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-black text-foreground">
+                    {horse.normalizedProb.toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Result Logger */}
+      <Card className="border-2">
+        <CardHeader>
+          <CardTitle className="text-xl font-black uppercase">Log Result</CardTitle>
+          <CardDescription>Select the winning horse</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-2">
+            {horses.map((horse) => (
+              <Button
+                key={horse.name}
+                variant={selectedWinner === horse.name ? 'default' : 'outline'}
+                className={cn(
+                  'justify-start h-auto py-3 font-bold',
+                  selectedWinner === horse.name && 'border-2 border-accent'
+                )}
+                onClick={() => handleSelectWinner(horse.name)}
+              >
+                <Trophy className="h-4 w-4 mr-2" />
+                {horse.name}
+              </Button>
             ))}
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={onReset}
-              disabled={isLogging}
-              className="flex-1 font-bold"
-            >
-              Start Over
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={!selectedWinner || isLogging}
-              className="flex-1 font-bold text-base"
-              size="lg"
-            >
-              {isLogging ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Logging...
-                </>
-              ) : (
-                'Confirm Winner'
-              )}
-            </Button>
-          </div>
+          <Button
+            onClick={handleSubmit}
+            disabled={!selectedWinner || isLogging}
+            className="w-full font-black uppercase"
+            size="lg"
+          >
+            {isLogging ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Logging...
+              </>
+            ) : (
+              'Submit Result'
+            )}
+          </Button>
+
+          <Button
+            onClick={onReset}
+            variant="outline"
+            className="w-full font-bold"
+            disabled={isLogging}
+          >
+            Start New Race
+          </Button>
         </CardContent>
       </Card>
     </div>

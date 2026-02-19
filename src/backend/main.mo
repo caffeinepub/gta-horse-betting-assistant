@@ -1,11 +1,10 @@
 import Map "mo:core/Map";
+import List "mo:core/List";
+import Time "mo:core/Time";
+import Float "mo:core/Float";
 import Array "mo:core/Array";
 import Iter "mo:core/Iter";
-import Time "mo:core/Time";
-import List "mo:core/List";
-import Float "mo:core/Float";
 import Order "mo:core/Order";
-import Text "mo:core/Text";
 
 
 

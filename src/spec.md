@@ -1,14 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Implement a persistent AsyncStorage data layer with immutable race records as the single source of truth for the GTA Betting Assistant.
+**Goal:** Define comprehensive modelState storage schema with signal weights and learning parameters to support future adaptive prediction logic.
 
 **Planned changes:**
-- Add AsyncStorage system with four keys: races (immutable race records array), modelState (learning parameters), bettingHistory (aggregated stats), and oddsBucketStats (odds range trust weights)
-- Define immutable race record data model with 13 fields including timestamp, odds, predictions, strategy, results, and profit/loss
-- Enforce immutability on saved race records using Object.freeze or readonly types
-- Implement rebuild functions to recalculate bettingHistory and oddsBucketStats from races array
-- Integrate race record persistence into PredictionAndResults component's logging workflow
-- Update ROIDashboard to read performance metrics from AsyncStorage instead of backend queries
+- Expand ModelState interface in frontend/src/types/storage.ts to include signalWeights object with oddsWeight, historicalBucketWeight, recentBucketWeight, and consistencyWeight fields
+- Add calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, and raceCount fields to ModelState interface
+- Update AsyncStorage implementation in frontend/src/lib/storage.ts to initialize modelState with default values for all new fields when no existing state is found
+- Add writeModelState function to frontend/src/lib/storage.ts that persists ModelState to localStorage with immutability enforcement and triggers change listeners
+- Add functions to frontend/src/lib/statsCalculator.ts that compute updated signal weights and calibration parameters from race records, returning updated ModelState
 
-**User-visible outcome:** Race history, predictions, and performance metrics are now stored locally and persist across sessions. The ROI dashboard displays cumulative statistics calculated from stored race records, and all betting data remains available even offline.
+**User-visible outcome:** The application now has a complete storage foundation for machine learning parameters that will enable adaptive horse betting predictions in future iterations. No immediate UI changes are visible to users.

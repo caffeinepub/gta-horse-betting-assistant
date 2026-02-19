@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 9,
+  "projectStateVersion": 13,
   "summary": "GTA Online horse betting assistant that anchors predictions to odds, learns from race outcomes, improves probability calibration and ROI through value detection, updates internal trust weights, and resets after every race. Primary workflow: Enter Odds → Get Pick → Log Results → Learn → Reset → Repeat.",
   "architectural_notes": [
     "Odds-anchored prediction model as core engine",
@@ -160,6 +160,94 @@
         "REQ-28"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-define-four-immutable-odds-bucket-ranges-in-the-storage-type-definitions-1-2-3-5-6-10-and-11-30-each-bucket-must-store-the-following-fields-totalraces-number-wins-number-top3finishes-number-totalimpliedprobability-number-actualwinrate-number-roiifflatbet-number-variancescore-number-and-recentwindowperformance-number-or-object",
+      "title": "Define four immutable odds bucket ranges in the storage type definitions: 1–2, 3–5, 6–10, and 11–30. Each bucket must store the following fields: totalRaces (number), wins (number), top3Finishes (number), totalImpliedProbability (number), actualWinRate (number), roiIfFlatBet (number), varianceScore (number), and recentWindowPerformance (number or object).",
+      "reqIds": [
+        "REQ-29"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-statscalculator-ts-to-implement-odds-bucket-classification-logic-that-maps-any-given-odds-value-to-exactly-one-of-the-four-defined-buckets-1-2-3-5-6-10-11-30-implement-a-bucket-statistics-calculation-function-that-processes-all-race-records-and-aggregates-statistics-for-each-bucket-computing-totalraces-wins-top3finishes-totalimpliedprobability-actualwinrate-roiifflatbet-variancescore-and-recentwindowperformance-from-the-races-array",
+      "title": "Update statsCalculator.ts to implement odds bucket classification logic that maps any given odds value to exactly one of the four defined buckets (1–2, 3–5, 6–10, 11–30). Implement a bucket statistics calculation function that processes all race records and aggregates statistics for each bucket, computing totalRaces, wins, top3Finishes, totalImpliedProbability, actualWinRate, roiIfFlatBet, varianceScore, and recentWindowPerformance from the races array.",
+      "reqIds": [
+        "REQ-30"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-refactor-storage-ts-asyncstorage-implementation-to-use-the-four-bucket-odds-range-structure-for-oddsbucketstats-update-the-rebuildderivedstats-function-to-calculate-bucket-statistics-from-races-array-using-the-new-bucket-classification-and-aggregation-logic-ensuring-oddsbucketstats-is-rebuilt-from-scratch-whenever-statistics-are-recalculated",
+      "title": "Refactor storage.ts AsyncStorage implementation to use the four-bucket odds range structure for oddsBucketStats. Update the rebuildDerivedStats function to calculate bucket statistics from races array using the new bucket classification and aggregation logic, ensuring oddsBucketStats is rebuilt from scratch whenever statistics are recalculated.",
+      "reqIds": [
+        "REQ-31"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-predictionandresults-component-to-retrieve-odds-bucket-statistics-from-asyncstorage-when-generating-predictions-use-bucket-level-actualwinrate-and-roiifflatbet-to-adjust-baseline-implied-probabilities-for-each-horse-based-on-its-odds-bucket-replacing-any-previous-contender-number-based-trust-weights",
+      "title": "Update PredictionAndResults component to retrieve odds bucket statistics from AsyncStorage when generating predictions. Use bucket-level actualWinRate and roiIfFlatBet to adjust baseline implied probabilities for each horse based on its odds bucket, replacing any previous contender-number-based trust weights.",
+      "reqIds": [
+        "REQ-32"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-race-logging-logic-in-useracestorage-hook-to-immediately-trigger-bucket-statistics-recalculation-after-a-new-race-record-is-saved-ensure-that-when-a-race-outcome-is-logged-the-bucket-containing-the-winning-horse-s-odds-is-updated-with-incremented-wins-totalraces-and-recalculated-performance-metrics",
+      "title": "Update race logging logic in useRaceStorage hook to immediately trigger bucket statistics recalculation after a new race record is saved. Ensure that when a race outcome is logged, the bucket containing the winning horse's odds is updated with incremented wins, totalRaces, and recalculated performance metrics.",
+      "reqIds": [
+        "REQ-33"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-roidashboard-component-to-display-odds-bucket-performance-breakdown-showing-totalraces-actualwinrate-and-roiifflatbet-for-each-of-the-four-buckets-1-2-3-5-6-10-11-30-present-this-data-in-a-clear-table-or-card-layout-so-users-can-see-which-odds-ranges-are-performing-well-or-poorly",
+      "title": "Update ROIDashboard component to display odds bucket performance breakdown showing totalRaces, actualWinRate, and roiIfFlatBet for each of the four buckets (1–2, 3–5, 6–10, 11–30). Present this data in a clear table or card layout so users can see which odds ranges are performing well or poorly.",
+      "reqIds": [
+        "REQ-35"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-src-types-storage-ts-to-expand-the-modelstate-interface-with-a-nested-signalweights-object-containing-oddsweight-number-historicalbucketweight-number-recentbucketweight-number-and-consistencyweight-number-fields",
+      "title": "Update frontend/src/types/storage.ts to expand the ModelState interface with a nested signalWeights object containing oddsWeight (number), historicalBucketWeight (number), recentBucketWeight (number), and consistencyWeight (number) fields",
+      "reqIds": [
+        "REQ-36"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-calibrationscalar-number-confidencescalingfactor-number-recentaccuracywindow-number-driftdetectionstate-object-or-appropriate-type-and-racecount-number-fields-to-the-modelstate-interface-in-frontend-src-types-storage-ts",
+      "title": "Add calibrationScalar (number), confidenceScalingFactor (number), recentAccuracyWindow (number), driftDetectionState (object or appropriate type), and raceCount (number) fields to the ModelState interface in frontend/src/types/storage.ts",
+      "reqIds": [
+        "REQ-37"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-src-lib-storage-ts-asyncstorage-implementation-to-initialize-modelstate-with-default-values-for-all-fields-signalweights-with-default-weight-values-calibrationscalar-confidencescalingfactor-recentaccuracywindow-driftdetectionstate-racecount-when-no-existing-modelstate-is-found-in-localstorage",
+      "title": "Update frontend/src/lib/storage.ts AsyncStorage implementation to initialize modelState with default values for all fields (signalWeights with default weight values, calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, raceCount) when no existing modelState is found in localStorage",
+      "reqIds": [
+        "REQ-38"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-writemodelstate-function-to-frontend-src-lib-storage-ts-that-accepts-a-modelstate-object-and-persists-it-to-asyncstorage-under-the-modelstate-key-with-immutability-enforcement",
+      "title": "Add a writeModelState function to frontend/src/lib/storage.ts that accepts a ModelState object and persists it to AsyncStorage under the 'modelState' key with immutability enforcement",
+      "reqIds": [
+        "REQ-39"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-src-lib-statscalculator-ts-to-add-functions-that-compute-updated-signal-weights-and-calibration-parameters-from-race-records-preparing-for-future-integration-with-the-prediction-system",
+      "title": "Update frontend/src/lib/statsCalculator.ts to add functions that compute updated signal weights and calibration parameters from race records, preparing for future integration with the prediction system",
+      "reqIds": [
+        "REQ-40"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -300,6 +388,32 @@
     {
       "id": "AR-23",
       "summary": "Define immutable race record data model with fields: timestamp, odds[6], impliedProbabilities[6], strategyMode, predictedProbabilities[6], signalBreakdown[6], recommendedContender, recommendedBetSize, modelWeightsSnapshot, actualFirst, actualSecond, actualThird, profitLoss",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-24",
+      "summary": "Define odds buckets as 1–2, 3–5, 6–10, 11–30 and implement bucket-level statistics tracking: totalRaces, wins, top3Finishes, totalImpliedProbability, actualWinRate, roiIfFlatBet, varianceScore, recentWindowPerformance",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "Refactor all long-term learning logic to use odds bucket statistics exclusively, eliminating any dependency on contender slot numbers for learning",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-31",
+      "summary": "Remove all backend Motoko code that references contender slot numbers, horse identities, or per-horse trust weights. Refactor backend learning system to accept only odds values and outcomes, storing trust weights or calibration factors grouped by the four defined odds bucket ranges (1–2, 3–5, 6–10, 11–30) instead of individual horses.",
+      "reqIds": [
+        "REQ-34"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-32",
+      "summary": "Define modelState storage schema with signalWeights (oddsWeight, historicalBucketWeight, recentBucketWeight, consistencyWeight), calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, and raceCount",
       "reqIds": [],
       "status": "pending"
     }

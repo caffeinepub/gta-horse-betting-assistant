@@ -1,152 +1,88 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Implement persistent AsyncStorage data layer with immutable race records",
+  "title": "Define modelState storage schema with comprehensive signal weights and learning parameters",
   "requirements": [
     {
-      "id": "REQ-23",
-      "summary": "Implement AsyncStorage global data storage system with four required keys for races, model state, betting history, and odds bucket statistics",
+      "id": "REQ-36",
+      "summary": "Expand ModelState interface with nested signalWeights object containing four numeric weight fields",
       "acceptanceCriteria": [
-        "AsyncStorage (or equivalent browser storage mechanism) is configured with the four required keys",
-        "Each key can be read from and written to storage independently",
-        "Storage operations handle serialization and deserialization of complex objects",
-        "Storage layer includes error handling for quota exceeded and corrupted data scenarios"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/storage.ts",
-          "operation": "create",
-          "description": "Create AsyncStorage wrapper providing typed read/write operations for the four required keys: races (array), modelState (object), bettingHistory (aggregated stats), and oddsBucketStats (odds range trust weights). Include error handling for storage quota exceeded and data corruption scenarios, with serialization/deserialization for complex objects."
-        },
-        {
-          "path": "frontend/src/types/storage.ts",
-          "operation": "create",
-          "description": "Define TypeScript interfaces for all storage data structures including StorageKeys enum, RaceRecord interface (13 fields), ModelState interface, BettingHistory interface (cumulative stats), and OddsBucketStats interface (odds range mappings)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-24",
-      "summary": "Define immutable race record data model with 13 required fields including timestamp, odds arrays, predictions, results, and profit/loss",
-      "acceptanceCriteria": [
-        "TypeScript interface or type definition exists for the race record structure",
-        "All 13 fields are included in the type definition with correct array lengths where specified",
-        "Race records are stored as immutable objects (using Object.freeze or readonly types)",
-        "No modification operations exist for race records after initial creation"
+        "ModelState interface includes a signalWeights object with four numeric weight fields",
+        "All weight fields are typed as number",
+        "TypeScript compilation succeeds with no type errors"
       ],
       "file_operations": [
         {
           "path": "frontend/src/types/storage.ts",
           "operation": "modify",
-          "description": "Add RaceRecord interface with all 13 required fields: timestamp (number), odds (readonly array of 6 numbers), impliedProbabilities (readonly array of 6 numbers), strategyMode (string), predictedProbabilities (readonly array of 6 numbers), signalBreakdown (readonly array), recommendedContender (number 0-5), recommendedBetSize (number), modelWeightsSnapshot (readonly object), actualFirst (number 0-5), actualSecond (number 0-5), actualThird (number 0-5), and profitLoss (number). Mark all fields as readonly to enforce immutability at the type level."
-        },
-        {
-          "path": "frontend/src/lib/storage.ts",
-          "operation": "modify",
-          "description": "Add createRaceRecord factory function that accepts race data and returns a deeply frozen RaceRecord object using Object.freeze to enforce runtime immutability. Ensure no update or modification methods exist for saved race records."
+          "description": "Add a nested signalWeights object to the ModelState interface containing oddsWeight, historicalBucketWeight, recentBucketWeight, and consistencyWeight fields, all typed as number. The signalWeights object represents the machine learning model's weighting system for different prediction signals."
         }
       ]
     },
     {
-      "id": "REQ-25",
-      "summary": "Enforce immutability constraint on race records once saved to storage, preventing any updates or modifications after initial write",
+      "id": "REQ-37",
+      "summary": "Add five additional learning parameter fields to the ModelState interface",
       "acceptanceCriteria": [
-        "Race records use immutable data structures (Object.freeze or deep readonly)",
-        "No update or patch methods exist for saved race records",
-        "Any attempt to modify a saved race record either throws an error or has no effect",
-        "New race data is always appended to the races array rather than modifying existing entries"
+        "ModelState interface includes all five additional fields with correct types",
+        "driftDetectionState is typed as an appropriate structure (object or custom interface)",
+        "All numeric fields are typed as number",
+        "TypeScript compilation succeeds"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/types/storage.ts",
+          "operation": "modify",
+          "description": "Add calibrationScalar (number), confidenceScalingFactor (number), recentAccuracyWindow (number), driftDetectionState (object with appropriate structure for tracking model drift), and raceCount (number) fields to the ModelState interface. These fields support the adaptive learning and calibration system."
+        }
+      ]
+    },
+    {
+      "id": "REQ-38",
+      "summary": "Initialize modelState with default values for all new fields when no existing modelState is found",
+      "acceptanceCriteria": [
+        "readModelState function returns a complete ModelState object with all fields populated",
+        "Default values are sensible starting points for the learning system",
+        "No undefined or null values in the returned modelState structure"
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/storage.ts",
           "operation": "modify",
-          "description": "Implement appendRace function that reads existing races array, appends the new frozen race record, and writes back to storage. Ensure no updateRace or modifyRace functions exist. Add JSDoc comments documenting the immutability contract and the append-only constraint."
-        },
-        {
-          "path": "frontend/src/lib/immutable.ts",
-          "operation": "create",
-          "description": "Create deep freeze utility function that recursively freezes objects and arrays to enforce runtime immutability. Include type guards and helper functions to verify immutability of race records."
+          "description": "Update the readModelState function to initialize a complete ModelState object with default values for signalWeights (with default numeric values for all four weights), calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, and raceCount when no existing modelState is found in localStorage. Ensure all fields are populated with sensible starting values for the learning system and apply deep freeze for immutability."
         }
       ]
     },
     {
-      "id": "REQ-26",
-      "summary": "Implement system capability to rebuild derived statistics from the races array, ensuring races is the single source of truth",
+      "id": "REQ-39",
+      "summary": "Add writeModelState function to persist ModelState objects with immutability enforcement",
       "acceptanceCriteria": [
-        "Function exists to recalculate bettingHistory from races array",
-        "Function exists to recalculate oddsBucketStats from races array",
-        "Rebuild functions can be triggered on demand (e.g., after data corruption or migration)",
-        "Derived stats calculation logic is deterministic and produces consistent results from the same races input"
+        "writeModelState function accepts a ModelState parameter and saves it to localStorage",
+        "Function enforces immutability by deep freezing the stored object",
+        "Function triggers storage change listeners to notify subscribers",
+        "Function returns success or failure status"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/storage.ts",
+          "operation": "modify",
+          "description": "Add a writeModelState function that accepts a ModelState object parameter, deep freezes it for immutability enforcement, persists it to localStorage under the 'modelState' key, triggers storage change listeners to notify all subscribers, and returns a success or failure status. Follow the same pattern as existing write functions in the storage module."
+        }
+      ]
+    },
+    {
+      "id": "REQ-40",
+      "summary": "Add functions to compute updated signal weights and calibration parameters from race records",
+      "acceptanceCriteria": [
+        "Functions accept an array of RaceRecord and current ModelState as inputs",
+        "Functions return updated ModelState with recalculated signal weights and parameters",
+        "Calculation logic is pure and deterministic",
+        "Functions include TypeScript type safety for all inputs and outputs"
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/statsCalculator.ts",
-          "operation": "create",
-          "description": "Create calculateBettingHistory function that aggregates cumulative ROI, total races, win rate, and total profit/loss from races array. Create calculateOddsBucketStats function that groups races by odds ranges and calculates trust weights based on historical accuracy. Both functions must be pure and deterministic."
-        },
-        {
-          "path": "frontend/src/lib/storage.ts",
           "operation": "modify",
-          "description": "Add rebuildDerivedStats function that reads the races array, recalculates bettingHistory and oddsBucketStats using the statsCalculator functions, and writes the updated derived data back to storage. This function should be callable on demand for data recovery scenarios."
-        },
-        {
-          "path": "frontend/src/hooks/useStorageRebuild.ts",
-          "operation": "create",
-          "description": "Create React hook that provides rebuildDerivedStats functionality with loading state, error handling, and success feedback. This hook can be used in admin or settings UI to trigger manual data rebuild."
-        }
-      ]
-    },
-    {
-      "id": "REQ-27",
-      "summary": "Integrate AsyncStorage race record persistence with existing PredictionAndResults component race logging workflow",
-      "acceptanceCriteria": [
-        "When a race result is logged, a complete race record is constructed with all 13 required fields",
-        "Race record is appended to the races array in AsyncStorage",
-        "Derived stats (bettingHistory, oddsBucketStats) are updated after each race save",
-        "Storage operations do not block the UI; errors are handled gracefully with user feedback"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useRaceStorage.ts",
-          "operation": "create",
-          "description": "Create React hook providing logRaceToStorage function that constructs a complete RaceRecord from race data (odds, predictions, results, profit/loss), appends it to AsyncStorage races array, triggers derived stats recalculation, and returns success/error status. Use async operations to avoid blocking UI."
-        },
-        {
-          "path": "frontend/src/components/PredictionAndResults.tsx",
-          "operation": "modify",
-          "description": "Integrate useRaceStorage hook into the result logging workflow. After race results are logged, call logRaceToStorage with complete race data including timestamp, odds, predictions, actual results (first/second/third), and calculated profit/loss. Display toast notifications for storage success/failure without blocking the UI or interrupting the workflow."
-        },
-        {
-          "path": "frontend/src/components/ResultLogger.tsx",
-          "operation": "modify",
-          "description": "Update result submission handler to capture all required race record fields (actual placement data, profit/loss calculation) and pass them to the storage integration in PredictionAndResults. Ensure the component collects actualFirst, actualSecond, and actualThird indices from user selection."
-        }
-      ]
-    },
-    {
-      "id": "REQ-28",
-      "summary": "Update ROIDashboard to read performance metrics from AsyncStorage bettingHistory instead of backend queries",
-      "acceptanceCriteria": [
-        "ROIDashboard reads from AsyncStorage bettingHistory key instead of backend actor",
-        "Performance metrics are calculated from locally stored race records",
-        "Dashboard updates in real-time when new races are logged to storage",
-        "Fallback displays appropriate message when no race history exists in storage"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useBettingHistory.ts",
-          "operation": "create",
-          "description": "Create React hook that reads bettingHistory from AsyncStorage and returns cumulative ROI, total races, win rate, and loading/error states. Hook should subscribe to storage changes to provide real-time updates when new races are logged."
-        },
-        {
-          "path": "frontend/src/components/ROIDashboard.tsx",
-          "operation": "modify",
-          "description": "Replace backend actor queries with useBettingHistory hook to read performance metrics from AsyncStorage. Display cumulative ROI percentage, total races logged, and win rate from locally stored bettingHistory. Show appropriate empty state message when no race history exists in storage. Ensure dashboard updates automatically when new races are saved."
-        },
-        {
-          "path": "frontend/src/lib/storage.ts",
-          "operation": "modify",
-          "description": "Add storage event listener or subscription mechanism to notify React components when storage data changes, enabling real-time dashboard updates after race logging without manual refresh."
+          "description": "Add pure functions that compute updated signal weights and calibration parameters from an array of RaceRecord and current ModelState inputs. Functions should return an updated ModelState with recalculated signalWeights (oddsWeight, historicalBucketWeight, recentBucketWeight, consistencyWeight) and calibration parameters (calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, raceCount). Implement deterministic calculation logic with full TypeScript type safety. These functions prepare the foundation for future integration with the prediction system."
         }
       ]
     }

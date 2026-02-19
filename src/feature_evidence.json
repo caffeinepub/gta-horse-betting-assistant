@@ -2,10 +2,9 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-implement-asyncstorage-global-data-storage-system-with-four-required-keys-races-array-of-race-records-modelstate-learning-model-parameters-bettinghistory-aggregated-betting-statistics-and-oddsbucketstats-odds-range-based-trust-weights",
-      "featureTitle": "Implement AsyncStorage global data storage system with four required keys: races (array of race records), modelState (learning model parameters), bettingHistory (aggregated betting statistics), and oddsBucketStats (odds range-based trust weights)",
+      "featureId": "feature-update-frontend-src-types-storage-ts-to-expand-the-modelstate-interface-with-a-nested-signalweights-object-containing-oddsweight-number-historicalbucketweight-number-recentbucketweight-number-and-consistencyweight-number-fields",
+      "featureTitle": "Update frontend/src/types/storage.ts to expand the ModelState interface with a nested signalWeights object containing oddsWeight (number), historicalBucketWeight (number), recentBucketWeight (number), and consistencyWeight (number) fields",
       "files": [
-        "frontend/src/lib/storage.ts",
         "frontend/src/types/storage.ts"
       ],
       "components": [
@@ -16,15 +15,14 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-23"
+        "REQ-36"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-define-immutable-race-record-data-model-with-the-following-fields-timestamp-string-or-number-odds-array-of-6-numbers-impliedprobabilities-array-of-6-numbers-strategymode-string-predictedprobabilities-array-of-6-numbers-signalbreakdown-array-of-6-objects-or-numbers-recommendedcontender-number-index-0-5-recommendedbetsize-number-modelweightssnapshot-object-actualfirst-number-index-0-5-actualsecond-number-index-0-5-actualthird-number-index-0-5-and-profitloss-number",
-      "featureTitle": "Define immutable race record data model with the following fields: timestamp (string or number), odds (array of 6 numbers), impliedProbabilities (array of 6 numbers), strategyMode (string), predictedProbabilities (array of 6 numbers), signalBreakdown (array of 6 objects or numbers), recommendedContender (number index 0-5), recommendedBetSize (number), modelWeightsSnapshot (object), actualFirst (number index 0-5), actualSecond (number index 0-5), actualThird (number index 0-5), and profitLoss (number)",
+      "featureId": "feature-add-calibrationscalar-number-confidencescalingfactor-number-recentaccuracywindow-number-driftdetectionstate-object-or-appropriate-type-and-racecount-number-fields-to-the-modelstate-interface-in-frontend-src-types-storage-ts",
+      "featureTitle": "Add calibrationScalar (number), confidenceScalingFactor (number), recentAccuracyWindow (number), driftDetectionState (object or appropriate type), and raceCount (number) fields to the ModelState interface in frontend/src/types/storage.ts",
       "files": [
-        "frontend/src/lib/storage.ts",
         "frontend/src/types/storage.ts"
       ],
       "components": [
@@ -35,15 +33,14 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-24"
+        "REQ-37"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-enforce-immutability-constraint-on-race-records-once-saved-to-storage-preventing-any-updates-or-modifications-after-the-initial-write-operation",
-      "featureTitle": "Enforce immutability constraint on race records once saved to storage, preventing any updates or modifications after the initial write operation",
+      "featureId": "feature-update-frontend-src-lib-storage-ts-asyncstorage-implementation-to-initialize-modelstate-with-default-values-for-all-fields-signalweights-with-default-weight-values-calibrationscalar-confidencescalingfactor-recentaccuracywindow-driftdetectionstate-racecount-when-no-existing-modelstate-is-found-in-localstorage",
+      "featureTitle": "Update frontend/src/lib/storage.ts AsyncStorage implementation to initialize modelState with default values for all fields (signalWeights with default weight values, calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, raceCount) when no existing modelState is found in localStorage",
       "files": [
-        "frontend/src/lib/immutable.ts",
         "frontend/src/lib/storage.ts"
       ],
       "components": [
@@ -54,16 +51,14 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-25"
+        "REQ-38"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-implement-system-capability-to-rebuild-derived-statistics-bettinghistory-oddsbucketstats-from-the-races-array-when-needed-ensuring-races-array-is-the-single-source-of-truth",
-      "featureTitle": "Implement system capability to rebuild derived statistics (bettingHistory, oddsBucketStats) from the races array when needed, ensuring races array is the single source of truth",
+      "featureId": "feature-add-a-writemodelstate-function-to-frontend-src-lib-storage-ts-that-accepts-a-modelstate-object-and-persists-it-to-asyncstorage-under-the-modelstate-key-with-immutability-enforcement",
+      "featureTitle": "Add a writeModelState function to frontend/src/lib/storage.ts that accepts a ModelState object and persists it to AsyncStorage under the 'modelState' key with immutability enforcement",
       "files": [
-        "frontend/src/hooks/useStorageRebuild.ts",
-        "frontend/src/lib/statsCalculator.ts",
         "frontend/src/lib/storage.ts"
       ],
       "components": [
@@ -74,16 +69,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-26"
+        "REQ-39"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-integrate-asyncstorage-race-record-persistence-with-the-existing-race-logging-workflow-in-predictionandresults-component-saving-complete-race-records-including-prediction-data-and-outcomes-when-results-are-logged",
-      "featureTitle": "Integrate AsyncStorage race record persistence with the existing race logging workflow in PredictionAndResults component, saving complete race records including prediction data and outcomes when results are logged",
+      "featureId": "feature-update-frontend-src-lib-statscalculator-ts-to-add-functions-that-compute-updated-signal-weights-and-calibration-parameters-from-race-records-preparing-for-future-integration-with-the-prediction-system",
+      "featureTitle": "Update frontend/src/lib/statsCalculator.ts to add functions that compute updated signal weights and calibration parameters from race records, preparing for future integration with the prediction system",
       "files": [
-        "frontend/src/components/PredictionAndResults.tsx",
-        "frontend/src/hooks/useRaceStorage.ts"
+        "frontend/src/lib/statsCalculator.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -93,27 +87,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-27"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-roidashboard-component-to-read-performance-metrics-from-asyncstorage-bettinghistory-key-instead-of-backend-queries-displaying-cumulative-roi-total-races-and-win-rate-from-locally-stored-race-history",
-      "featureTitle": "Update ROIDashboard component to read performance metrics from AsyncStorage (bettingHistory key) instead of backend queries, displaying cumulative ROI, total races, and win rate from locally stored race history",
-      "files": [
-        "frontend/src/components/ROIDashboard.tsx",
-        "frontend/src/hooks/useBettingHistory.ts",
-        "frontend/src/lib/storage.ts"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-28"
+        "REQ-40"
       ],
       "confidence": "high"
     }
