@@ -21,6 +21,7 @@ const STRATEGY_MODES: { value: StrategyMode; label: string; description: string;
 
 export function OddsEntryForm({ onSubmit, strategyMode, onStrategyModeChange }: OddsEntryFormProps) {
   const [odds, setOdds] = useState<string[]>(['', '', '', '', '', '']);
+  const [errors, setErrors] = useState<string[]>(['', '', '', '', '', '']);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   
   useEffect(() => {
@@ -29,37 +30,78 @@ export function OddsEntryForm({ onSubmit, strategyMode, onStrategyModeChange }: 
   }, []);
   
   const handleOddsChange = (index: number, value: string) => {
-    // Only allow integers 1-30
-    if (value === '' || (/^\d+$/.test(value) && parseInt(value) >= 1 && parseInt(value) <= 30)) {
+    // Allow empty string or digits only (no validation yet)
+    if (value === '' || /^\d+$/.test(value)) {
       const newOdds = [...odds];
       newOdds[index] = value;
       setOdds(newOdds);
       
-      // Auto-advance to next field if value is valid
-      if (value !== '' && index < 5) {
-        inputRefs.current[index + 1]?.focus();
+      // Clear error for this field when user starts typing
+      if (errors[index]) {
+        const newErrors = [...errors];
+        newErrors[index] = '';
+        setErrors(newErrors);
       }
-      
-      // Auto-submit on last field
-      if (value !== '' && index === 5 && newOdds.every(o => o !== '')) {
-        setTimeout(() => handleSubmit(newOdds), 100);
-      }
+    }
+  };
+  
+  const validateField = (index: number, value: string): string => {
+    if (value === '') {
+      return 'Required';
+    }
+    const num = parseInt(value);
+    if (isNaN(num) || num < 1 || num > 30) {
+      return 'Must be 1-30';
+    }
+    return '';
+  };
+  
+  const handleBlur = (index: number) => {
+    const error = validateField(index, odds[index]);
+    const newErrors = [...errors];
+    newErrors[index] = error;
+    setErrors(newErrors);
+  };
+  
+  const handleFocus = (index: number) => {
+    // Clear error when user focuses field for clean editing experience
+    if (errors[index]) {
+      const newErrors = [...errors];
+      newErrors[index] = '';
+      setErrors(newErrors);
     }
   };
   
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      
+      // Validate current field
+      const error = validateField(index, odds[index]);
+      if (error) {
+        const newErrors = [...errors];
+        newErrors[index] = error;
+        setErrors(newErrors);
+        return;
+      }
+      
+      // Move to next field or submit
       if (index < 5) {
         inputRefs.current[index + 1]?.focus();
-      } else if (odds.every(o => o !== '')) {
+      } else {
+        // On last field, validate all and submit
         handleSubmit(odds);
       }
     }
   };
   
   const handleSubmit = (currentOdds: string[]) => {
-    if (currentOdds.every(o => o !== '')) {
+    // Validate all fields
+    const newErrors = currentOdds.map((value, index) => validateField(index, value));
+    setErrors(newErrors);
+    
+    // Only submit if all fields are valid
+    if (newErrors.every(e => e === '')) {
       const oddsNumbers = currentOdds.map(o => parseInt(o));
       onSubmit({ odds: oddsNumbers });
     }
@@ -72,6 +114,7 @@ export function OddsEntryForm({ onSubmit, strategyMode, onStrategyModeChange }: 
   const calculateImpliedProb = (oddsValue: string): number => {
     if (oddsValue === '') return 0;
     const oddsNum = parseInt(oddsValue);
+    if (isNaN(oddsNum)) return 0;
     // CORRECT FORMULA: 1 / (odds + 1)
     return (1 / (oddsNum + 1)) * 100;
   };
@@ -79,6 +122,7 @@ export function OddsEntryForm({ onSubmit, strategyMode, onStrategyModeChange }: 
   const totalImplied = odds.reduce((sum, o) => sum + calculateImpliedProb(o), 0);
   const overround = totalImplied - 100;
   const allFilled = odds.every(o => o !== '');
+  const allValid = allFilled && odds.every((o, i) => validateField(i, o) === '');
   
   // Flag extreme overround values
   const isExtremeOverround = allFilled && (totalImplied > 120 || totalImplied < 95);
@@ -127,34 +171,54 @@ export function OddsEntryForm({ onSubmit, strategyMode, onStrategyModeChange }: 
           {odds.map((value, index) => (
             <div 
               key={index} 
-              className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all animate-slide-in"
+              className="space-y-1 animate-slide-in"
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <Label className="w-16 font-black text-xl text-muted-foreground">#{index + 1}</Label>
-              <div className="flex-1 flex items-center gap-3">
-                <Input
-                  ref={(el) => {
-                    inputRefs.current[index] = el;
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  value={value}
-                  onChange={(e) => handleOddsChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  placeholder="1-30"
-                  className="text-2xl font-mono font-bold h-14 bg-input border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all tabular-nums"
-                />
-                <span className="text-xl text-muted-foreground font-mono">/1</span>
+              <div 
+                className={`flex items-center gap-4 p-4 rounded-xl bg-muted/20 border transition-all ${
+                  errors[index] 
+                    ? 'border-destructive/50 bg-destructive/5' 
+                    : 'border-border/50 hover:border-primary/30'
+                }`}
+              >
+                <Label className="w-16 font-black text-xl text-muted-foreground">#{index + 1}</Label>
+                <div className="flex-1 flex items-center gap-3">
+                  <Input
+                    ref={(el) => {
+                      inputRefs.current[index] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    value={value}
+                    onChange={(e) => handleOddsChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onBlur={() => handleBlur(index)}
+                    onFocus={() => handleFocus(index)}
+                    placeholder="1-30"
+                    className={`text-2xl font-mono font-bold h-14 bg-input border-2 transition-all tabular-nums ${
+                      errors[index]
+                        ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
+                        : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/20'
+                    }`}
+                  />
+                  <span className="text-xl text-muted-foreground font-mono">/1</span>
+                </div>
+                <div className="w-28 text-right">
+                  {value && !errors[index] && (
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 border border-accent/30">
+                      <span className="text-sm font-bold text-accent tabular-nums">
+                        {calculateImpliedProb(value).toFixed(1)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="w-28 text-right">
-                {value && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 border border-accent/30">
-                    <span className="text-sm font-bold text-accent tabular-nums">
-                      {calculateImpliedProb(value).toFixed(1)}%
-                    </span>
-                  </div>
-                )}
-              </div>
+              {errors[index] && (
+                <div className="flex items-center gap-2 text-destructive text-sm font-semibold px-4">
+                  <AlertCircle className="h-4 w-4" />
+                  {errors[index]}
+                </div>
+              )}
             </div>
           ))}
           
@@ -187,7 +251,7 @@ export function OddsEntryForm({ onSubmit, strategyMode, onStrategyModeChange }: 
           
           <Button
             onClick={() => handleSubmit(odds)}
-            disabled={!allFilled}
+            disabled={!allValid}
             className="w-full h-16 text-xl font-black bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-glow hover:shadow-glow-lg transition-all duration-300 mt-6"
             size="lg"
           >

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 35,
+  "projectStateVersion": 37,
   "summary": "GTA Online horse betting assistant that anchors predictions to odds, learns from race outcomes, improves probability calibration and ROI through value detection, updates internal trust weights, and resets after every race. Primary workflow: Enter Odds → Get Pick → Log Results → Learn → Reset → Repeat.",
   "architectural_notes": [
     "Odds-anchored prediction model as core engine",
@@ -15,7 +15,8 @@
     "All other screens are secondary and must not interrupt the main race loop"
   ],
   "known_issues": [
-    "Implied probability calculation may be using 1/X instead of 1/(X+1), causing calibration/ROI/value edge failures"
+    "Implied probability calculation may be using 1/X instead of 1/(X+1), causing calibration/ROI/value edge failures",
+    "Odds input fields currently auto-advance after single character, preventing two-digit entry and corrupting data when user intends values like 10, 20, 30"
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -930,6 +931,46 @@
         "REQ-125"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-remove-single-character-auto-advance-logic-from-oddsentryform-component-in-frontend-src-components-oddsentryform-tsx-delete-any-onchange-handler-or-input-event-listener-that-automatically-moves-focus-to-the-next-field-after-a-single-character-is-entered",
+      "title": "Remove single-character auto-advance logic from OddsEntryForm component in frontend/src/components/OddsEntryForm.tsx. Delete any onChange handler or input event listener that automatically moves focus to the next field after a single character is entered.",
+      "reqIds": [
+        "REQ-126"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-enter-key-handler-in-oddsentryform-that-advances-focus-to-the-next-odds-input-field-when-the-user-presses-enter-or-the-keyboard-next-key-for-fields-1-through-5-pressing-enter-should-move-focus-to-the-next-sequential-field-for-field-6-pressing-enter-should-submit-the-form-if-all-validation-passes",
+      "title": "Implement Enter key handler in OddsEntryForm that advances focus to the next odds input field when the user presses Enter or the keyboard 'Next' key. For fields #1 through #5, pressing Enter should move focus to the next sequential field. For field #6, pressing Enter should submit the form if all validation passes.",
+      "reqIds": [
+        "REQ-127"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-odds-input-validation-in-oddsentryform-to-validate-on-blur-when-focus-leaves-the-field-or-on-form-submit-not-on-every-character-input-accept-integers-from-1-to-30-allow-1-or-2-digit-input-without-interruption-display-validation-error-feedback-only-after-the-user-has-finished-editing-the-field-blur-event-or-attempts-to-submit",
+      "title": "Update odds input validation in OddsEntryForm to validate on blur (when focus leaves the field) or on form submit, not on every character input. Accept integers from 1 to 30. Allow 1 or 2 digit input without interruption. Display validation error feedback only after the user has finished editing the field (blur event) or attempts to submit.",
+      "reqIds": [
+        "REQ-128"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-manual-focus-navigation-in-oddsentryform-continues-to-work-as-expected-user-should-be-able-to-manually-tap-click-into-any-odds-input-field-at-any-time-without-interference-from-auto-advance-logic-tab-key-navigation-between-fields-should-work-normally",
+      "title": "Ensure manual focus navigation in OddsEntryForm continues to work as expected. User should be able to manually tap/click into any odds input field at any time without interference from auto-advance logic. Tab key navigation between fields should work normally.",
+      "reqIds": [
+        "REQ-129"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-real-time-implied-probability-display-logic-in-oddsentryform-to-recalculate-and-display-implied-probability-using-the-formula-1-odds-1-as-the-user-types-valid-odds-values-but-without-triggering-focus-changes-implied-probability-should-update-in-real-time-while-the-user-remains-focused-in-the-current-field",
+      "title": "Update the real-time implied probability display logic in OddsEntryForm to recalculate and display implied probability using the formula 1/(odds+1) as the user types valid odds values, but without triggering focus changes. Implied probability should update in real-time while the user remains focused in the current field.",
+      "reqIds": [
+        "REQ-130"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -1210,6 +1251,12 @@
     {
       "id": "AR-72",
       "summary": "Redesign UI with enhanced visual personality, polish, and immaculate aesthetic improvements to create a cohesive, professional, and engaging visual experience",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-73",
+      "summary": "Fix odds input auto-advance behavior: remove single-character auto-advance, only advance on Enter key or manual navigation, allow full 1-2 digit input without interruption",
       "reqIds": [],
       "status": "pending"
     }

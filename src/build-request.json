@@ -1,214 +1,124 @@
 {
   "kind": "build_request",
-  "title": "Redesign UI with enhanced visual personality and immaculate aesthetic polish",
-  "projectName": "GTA Betting Assistant",
+  "title": "Fix odds input auto-advance to allow two-digit entry",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-116",
-      "text": "Redesign the overall visual theme in frontend/index.css and frontend/tailwind.config.js to create a sophisticated, high-contrast aesthetic with premium materials. Replace the current racing-inspired theme with a refined dark interface using deep charcoal backgrounds (oklch(0.15 0.01 240)), rich card surfaces (oklch(0.18 0.015 240)), and elegant accent colors. Use gold accents (oklch(0.75 0.15 85)) for primary actions and success states, crimson (oklch(0.55 0.20 25)) for warnings and value indicators, and electric cyan (oklch(0.70 0.18 195)) for informational highlights. Ensure all colors maintain WCAG AA contrast ratios.",
+      "id": "REQ-126",
+      "text": "Remove single-character auto-advance logic from OddsEntryForm component in frontend/src/components/OddsEntryForm.tsx. Delete any onChange handler or input event listener that automatically moves focus to the next field after a single character is entered.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-last"
         ],
         "quotes": [
-          "Jesus, where'd all the psetonality go? Make this app look immaculate."
+          "Auto-advance must NOT trigger after a single keystroke.",
+          "Do NOT auto-advance based solely on input length."
         ]
       },
       "acceptanceCriteria": [
-        "Deep charcoal background creates premium dark interface",
-        "Gold, crimson, and cyan accent colors provide visual hierarchy",
-        "All text maintains WCAG AA contrast ratios against backgrounds",
-        "Color palette feels cohesive and intentional across all screens"
+        "Typing a single digit (e.g., '1') does not automatically move focus to the next field",
+        "User can continue typing in the same field to enter two-digit values (e.g., '10', '20', '30')",
+        "No focus change occurs based on input length"
       ]
     },
     {
-      "id": "REQ-117",
-      "text": "Update typography system in frontend/tailwind.config.js to use a refined font hierarchy. Set headings to use Inter with weights 700-800 and optical size adjustments. Body text should use Inter weight 400-500 with increased letter-spacing (0.01em) for improved readability. Numeric displays (odds, probabilities, dollar amounts) should use JetBrains Mono weight 600 with tabular figures enabled. Add custom text styles for key UI elements: display titles (text-2xl font-bold tracking-tight), section headers (text-lg font-semibold tracking-wide uppercase text-muted-foreground), and data values (font-mono text-xl font-semibold tabular-nums).",
+      "id": "REQ-127",
+      "text": "Implement Enter key handler in OddsEntryForm that advances focus to the next odds input field when the user presses Enter or the keyboard 'Next' key. For fields #1 through #5, pressing Enter should move focus to the next sequential field. For field #6, pressing Enter should submit the form if all validation passes.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-last"
         ],
         "quotes": [
-          "Make this app look immaculate."
+          "User presses the keyboard 'Enter' or 'Next' key",
+          "User presses Enter → focus moves to next field"
         ]
       },
       "acceptanceCriteria": [
-        "Headings use Inter bold with optical sizing",
-        "Body text uses Inter with improved letter-spacing",
-        "All numeric values use JetBrains Mono with tabular figures",
-        "Typography hierarchy creates clear visual structure"
+        "Pressing Enter in field #1 moves focus to field #2",
+        "Pressing Enter in field #2 moves focus to field #3",
+        "Pressing Enter in field #3 moves focus to field #4",
+        "Pressing Enter in field #4 moves focus to field #5",
+        "Pressing Enter in field #5 moves focus to field #6",
+        "Pressing Enter in field #6 with all valid odds entered submits the form"
       ]
     },
     {
-      "id": "REQ-118",
-      "text": "Redesign the Layout component in frontend/src/components/Layout.tsx with enhanced header styling. Add a subtle gradient background to the header (from deep charcoal to slightly lighter), implement a thin gold bottom border (1px), and add a refined drop shadow. Replace the trophy icon with a more sophisticated icon treatment or custom logo lockup. Increase header padding and use the new typography system for the app title. Add subtle animations: fade-in on mount and gentle parallax scroll effect.",
+      "id": "REQ-128",
+      "text": "Update odds input validation in OddsEntryForm to validate on blur (when focus leaves the field) or on form submit, not on every character input. Accept integers from 1 to 30. Allow 1 or 2 digit input without interruption. Display validation error feedback only after the user has finished editing the field (blur event) or attempts to submit.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-last"
         ],
         "quotes": [
-          "Make this app look immaculate."
+          "Validate on blur or submit, not per character",
+          "Typing must be uninterrupted.",
+          "Accept integers from 1 to 30",
+          "Allow 1 or 2 digits"
         ]
       },
       "acceptanceCriteria": [
-        "Header has gradient background and gold accent border",
-        "Header branding uses refined typography and spacing",
-        "Subtle animations enhance perceived quality",
-        "Drop shadow creates depth without overwhelming"
+        "User can type '1' and continue typing '0' to enter '10' without validation errors appearing",
+        "Validation error appears only when user leaves the field (blur) with invalid value",
+        "Validation error appears when user tries to submit with invalid or empty fields",
+        "No validation feedback displays while user is actively typing",
+        "Values outside 1-30 range are rejected on blur or submit",
+        "Non-integer values are rejected on blur or submit"
       ]
     },
     {
-      "id": "REQ-119",
-      "text": "Redesign the Dashboard component in frontend/src/components/Dashboard.tsx with premium card layouts. Each metric card should have: subtle background gradients, refined borders with gold accent on hover, generous padding (p-6), rounded corners (rounded-xl), and elegant box shadows (shadow-lg with custom spread). Organize cards in a masonry-style grid with varying card heights based on content importance. Add micro-interactions: cards scale slightly on hover (transform: scale(1.02)), smooth transitions (duration-300), and staggered fade-in animations on load. The START NEW RACE button should be a prominent hero element with gold gradient background, large size, and pulsing glow animation.",
+      "id": "REQ-129",
+      "text": "Ensure manual focus navigation in OddsEntryForm continues to work as expected. User should be able to manually tap/click into any odds input field at any time without interference from auto-advance logic. Tab key navigation between fields should work normally.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-last"
         ],
         "quotes": [
-          "Make this app look immaculate."
+          "User manually taps into the next field"
         ]
       },
       "acceptanceCriteria": [
-        "Metric cards use premium styling with gradients and shadows",
-        "Hover effects provide satisfying tactile feedback",
-        "START NEW RACE button is visually dominant with gold treatment",
-        "Staggered animations create polished loading experience"
+        "User can click/tap any odds input field to focus it",
+        "Tab key moves focus to the next field normally",
+        "Shift+Tab moves focus to the previous field normally",
+        "Manual navigation is not blocked or interfered with by any auto-advance code"
       ]
     },
     {
-      "id": "REQ-120",
-      "text": "Redesign the OddsEntryForm component in frontend/src/components/OddsEntryForm.tsx with refined input styling. Each odds input field should have: dark background with subtle border, gold focus ring with glow effect, increased font size for odds values (text-2xl), and monospace font for numeric entry. Add visual separators between rows using thin gradient lines. The implied probability display should use cyan accent color with a subtle background pill. Strategy mode selector should use segmented control design with smooth sliding indicator. Add entrance animations where each input row fades in sequentially with 50ms delay between rows.",
+      "id": "REQ-130",
+      "text": "Update the real-time implied probability display logic in OddsEntryForm to recalculate and display implied probability using the formula 1/(odds+1) as the user types valid odds values, but without triggering focus changes. Implied probability should update in real-time while the user remains focused in the current field.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-last"
         ],
         "quotes": [
-          "Make this app look immaculate."
+          "Typing must be uninterrupted."
         ]
       },
       "acceptanceCriteria": [
-        "Input fields have premium dark styling with gold focus states",
-        "Implied probabilities display with cyan accent treatment",
-        "Strategy selector uses smooth segmented control design",
-        "Sequential entrance animations enhance perceived quality"
-      ]
-    },
-    {
-      "id": "REQ-121",
-      "text": "Redesign the PredictionAndResults component in frontend/src/components/PredictionAndResults.tsx with sophisticated panel layouts. The Primary Panel (BEST BET) should be a hero card with gold gradient border, large typography for the recommended pick, and confidence indicator using colored rings (gold=high, amber=medium, crimson=low). Value Edge should display with visual treatment: positive edges show in cyan with upward arrow, negative edges in crimson with downward arrow. The bet size slider should have custom thumb styling with gold accent and real-time value tooltip. Signal breakdown should use horizontal bar charts with gradient fills showing signal strength. Add smooth transitions between prediction and result logging states.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "Make this app look immaculate."
-        ]
-      },
-      "acceptanceCriteria": [
-        "BEST BET panel is visually prominent with gold treatment",
-        "Confidence levels use colored visual indicators",
-        "Value Edge displays with directional arrows and color coding",
-        "Bet slider has custom styling with real-time feedback",
-        "Signal breakdown uses elegant bar chart visualization"
-      ]
-    },
-    {
-      "id": "REQ-122",
-      "text": "Add sophisticated loading states and transitions throughout the application. Implement skeleton loaders for Dashboard cards with shimmer animations. Add smooth page transitions when navigating between tabs using fade and slide effects (200ms duration with ease-in-out). Create a custom loading spinner with gold accent for async operations. Add success/error toast notifications with refined styling, icons, and slide-in animations from top-right. Implement optimistic UI updates where appropriate to reduce perceived latency.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "Make this app look immaculate."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Skeleton loaders provide smooth loading experience",
-        "Page transitions are smooth and intentional",
-        "Loading spinner matches refined visual theme",
-        "Toast notifications have premium styling and animations"
-      ]
-    },
-    {
-      "id": "REQ-123",
-      "text": "Implement refined spacing system throughout the UI. Increase whitespace between major sections (space-y-8 or space-y-12), add breathing room to cards (p-6 to p-8), and ensure consistent margins. Update the tab navigation in BettingWorkflow to use pill-style buttons with smooth sliding active indicator and gold accent. Add subtle dividers between sections using gradient lines (from transparent to accent color and back). Ensure all interactive elements have proper focus states with visible gold focus rings and adequate touch targets (min 44x44px).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "Make this app look immaculate."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Generous whitespace creates breathing room",
-        "Tab navigation uses polished pill design with sliding indicator",
-        "All interactive elements have proper focus states",
-        "Touch targets meet accessibility standards"
-      ]
-    },
-    {
-      "id": "REQ-124",
-      "text": "Add subtle ambient animations and visual flourishes to enhance perceived quality. Implement particle effects or subtle geometric patterns in the background that respond to user actions (e.g., subtle sparkles on successful bet save). Add smooth number counting animations when statistics update (animate from old value to new value over 500ms). Implement a subtle glow effect around high-value picks or strong confidence indicators. Add entrance animations for modals and dialogs with backdrop blur and fade-in effects.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "Make this app look immaculate."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Subtle background effects add visual interest without distraction",
-        "Number transitions animate smoothly when values change",
-        "High-confidence picks have subtle glow treatment",
-        "Modals and dialogs have polished entrance animations"
-      ]
-    },
-    {
-      "id": "REQ-125",
-      "text": "Refine the Settings component in frontend/src/components/Settings.tsx with enhanced visual hierarchy and button styling. Destructive actions (Full Reset) should use crimson with warning icon and require explicit confirmation with typed confirmation. Non-destructive actions should use neutral styling. Export button should use cyan accent. Add descriptive helper text under each action in muted color. Implement a refined dialog design with backdrop blur, smooth scale animation on open, and elegant close button. Add visual indicators showing data counts (e.g., 'X races stored') next to relevant actions.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "Make this app look immaculate."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Destructive actions clearly distinguished with crimson treatment",
-        "Helper text provides context without cluttering interface",
-        "Dialog has refined backdrop and animation treatment",
-        "Data counts provide transparency about stored information"
+        "Implied probability updates in real-time as user types valid odds",
+        "Real-time calculation does not cause focus to leave the current input field",
+        "Total implied probability and overround warning update in real-time without disrupting input"
       ]
     }
   ],
   "constraints": [
-    "Do not modify files in frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui directory",
-    "Maintain single-actor Motoko architecture in backend/main.mo",
-    "Preserve all existing functional logic and data structures",
-    "All color changes must maintain WCAG AA contrast ratios",
-    "Ensure all interactive elements remain keyboard accessible"
+    "Do not modify the existing validation range (1-30 for odds values)",
+    "Preserve the strategy mode selector persistence behavior",
+    "Maintain the existing submit button enable/disable logic based on all six fields having valid values",
+    "Keep the auto-focus behavior that starts on field #1 when the screen loads",
+    "Do not change the implied probability formula (1/(odds+1)) that was corrected in previous requirements"
   ],
   "nonGoals": [
-    "Changing the core betting workflow or prediction algorithms",
-    "Modifying the odds bucket system or learning mechanisms",
-    "Adding new features beyond visual refinement",
-    "Changing the three-screen navigation structure",
-    "Modifying backend Motoko code or data models"
+    "Changing the visual styling or layout of the odds entry form",
+    "Modifying the strategy mode selector behavior",
+    "Changing the submit button label or positioning",
+    "Adding new validation rules beyond the existing 1-30 integer range",
+    "Modifying the total implied probability or overround calculation logic"
   ],
   "imageRequirements": {
     "required": [],
