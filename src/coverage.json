@@ -1,18 +1,74 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T22:59:30.534Z",
+  "generatedAt": "2026-02-20T01:12:51.290Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 6,
+    "total": 10,
+    "implemented": 10,
     "items": [
       {
-        "id": "REQ-64",
-        "summary": "Redesign the PredictionAndResults component layout to display Strategy Mode prominently at the top, followed by a six-row display showing all odds with their corresponding real-time calculated implied probabilities (odds/implied pairs for contenders #1-#6)",
+        "id": "REQ-116",
+        "summary": "Redesign the overall visual theme in frontend/index.css and frontend/tailwind.config.js to create a sophisticated, high-contrast aesthetic with premium materials. Replace the current racing-inspired theme with a refined dark interface using deep charcoal backgrounds (oklch(0.15 0.01 240)), rich card surfaces (oklch(0.18 0.015 240)), and elegant accent colors. Use gold accents (oklch(0.75 0.15 85)) for primary actions and success states, crimson (oklch(0.55 0.20 25)) for warnings and value indicators, and electric cyan (oklch(0.70 0.18 195)) for informational highlights. Ensure all colors maintain WCAG AA contrast ratios.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/index.css",
+          "frontend/tailwind.config.js"
+        ],
+        "matchedFiles": [
+          "frontend/tailwind.config.js"
+        ]
+      },
+      {
+        "id": "REQ-117",
+        "summary": "Update typography system in frontend/tailwind.config.js to use a refined font hierarchy. Set headings to use Inter with weights 700-800 and optical size adjustments. Body text should use Inter weight 400-500 with increased letter-spacing (0.01em) for improved readability. Numeric displays (odds, probabilities, dollar amounts) should use JetBrains Mono weight 600 with tabular figures enabled. Add custom text styles for key UI elements: display titles (text-2xl font-bold tracking-tight), section headers (text-lg font-semibold tracking-wide uppercase text-muted-foreground), and data values (font-mono text-xl font-semibold tabular-nums).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/tailwind.config.js"
+        ],
+        "matchedFiles": [
+          "frontend/tailwind.config.js"
+        ]
+      },
+      {
+        "id": "REQ-118",
+        "summary": "Redesign the Layout component in frontend/src/components/Layout.tsx with enhanced header styling. Add a subtle gradient background to the header (from deep charcoal to slightly lighter), implement a thin gold bottom border (1px), and add a refined drop shadow. Replace the trophy icon with a more sophisticated icon treatment or custom logo lockup. Increase header padding and use the new typography system for the app title. Add subtle animations: fade-in on mount and gentle parallax scroll effect.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/Layout.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/Layout.tsx"
+        ]
+      },
+      {
+        "id": "REQ-119",
+        "summary": "Redesign the Dashboard component in frontend/src/components/Dashboard.tsx with premium card layouts. Each metric card should have: subtle background gradients, refined borders with gold accent on hover, generous padding (p-6), rounded corners (rounded-xl), and elegant box shadows (shadow-lg with custom spread). Organize cards in a masonry-style grid with varying card heights based on content importance. Add micro-interactions: cards scale slightly on hover (transform: scale(1.02)), smooth transitions (duration-300), and staggered fade-in animations on load. The START NEW RACE button should be a prominent hero element with gold gradient background, large size, and pulsing glow animation.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/Dashboard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/Dashboard.tsx"
+        ]
+      },
+      {
+        "id": "REQ-120",
+        "summary": "Redesign the OddsEntryForm component in frontend/src/components/OddsEntryForm.tsx with refined input styling. Each odds input field should have: dark background with subtle border, gold focus ring with glow effect, increased font size for odds values (text-2xl), and monospace font for numeric entry. Add visual separators between rows using thin gradient lines. The implied probability display should use cyan accent color with a subtle background pill. Strategy mode selector should use segmented control design with smooth sliding indicator. Add entrance animations where each input row fades in sequentially with 50ms delay between rows.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/OddsEntryForm.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/OddsEntryForm.tsx"
+        ]
+      },
+      {
+        "id": "REQ-121",
+        "summary": "Redesign the PredictionAndResults component in frontend/src/components/PredictionAndResults.tsx with sophisticated panel layouts. The Primary Panel (BEST BET) should be a hero card with gold gradient border, large typography for the recommended pick, and confidence indicator using colored rings (gold=high, amber=medium, crimson=low). Value Edge should display with visual treatment: positive edges show in cyan with upward arrow, negative edges in crimson with downward arrow. The bet size slider should have custom thumb styling with gold accent and real-time value tooltip. Signal breakdown should use horizontal bar charts with gradient fills showing signal strength. Add smooth transitions between prediction and result logging states.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/PredictionAndResults.tsx"
@@ -22,58 +78,64 @@
         ]
       },
       {
-        "id": "REQ-65",
-        "summary": "Create a Primary Panel section in PredictionAndResults that displays the recommended pick with the label 'BEST BET: #X' (where X is the contender number 1-6), showing Predicted Probability (adjusted probability from prediction engine), Implied Probability (baseline 1/odds), Value Edge (adjusted minus implied), Confidence Level (High/Medium/Low with visual indicator), and Recommended Bet (dollar amount with bet sizing logic)",
+        "id": "REQ-122",
+        "summary": "Add sophisticated loading states and transitions throughout the application. Implement skeleton loaders for Dashboard cards with shimmer animations. Add smooth page transitions when navigating between tabs using fade and slide effects (200ms duration with ease-in-out). Create a custom loading spinner with gold accent for async operations. Add success/error toast notifications with refined styling, icons, and slide-in animations from top-right. Implement optimistic UI updates where appropriate to reduce perceived latency.",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/src/components/Dashboard.tsx",
+          "frontend/src/components/BettingWorkflow.tsx",
+          "frontend/src/components/ui/spinner.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/Dashboard.tsx",
+          "frontend/src/components/BettingWorkflow.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-123",
+        "summary": "Implement refined spacing system throughout the UI. Increase whitespace between major sections (space-y-8 or space-y-12), add breathing room to cards (p-6 to p-8), and ensure consistent margins. Update the tab navigation in BettingWorkflow to use pill-style buttons with smooth sliding active indicator and gold accent. Add subtle dividers between sections using gradient lines (from transparent to accent color and back). Ensure all interactive elements have proper focus states with visible gold focus rings and adequate touch targets (min 44x44px).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/BettingWorkflow.tsx",
+          "frontend/src/components/Dashboard.tsx",
+          "frontend/src/components/OddsEntryForm.tsx",
           "frontend/src/components/PredictionAndResults.tsx"
         ],
         "matchedFiles": [
+          "frontend/src/components/BettingWorkflow.tsx",
+          "frontend/src/components/Dashboard.tsx",
+          "frontend/src/components/OddsEntryForm.tsx",
           "frontend/src/components/PredictionAndResults.tsx"
         ]
       },
       {
-        "id": "REQ-66",
-        "summary": "Create a Secondary Panel section in PredictionAndResults that displays a Signal Breakdown showing four individual signal contributions: Odds Signal (baseline probability contribution), Historical Bucket Signal (bucket win delta contribution), Recent Bucket Signal (recent session delta contribution), and Consistency Signal (consistency modifier contribution from variance)",
+        "id": "REQ-124",
+        "summary": "Add subtle ambient animations and visual flourishes to enhance perceived quality. Implement particle effects or subtle geometric patterns in the background that respond to user actions (e.g., subtle sparkles on successful bet save). Add smooth number counting animations when statistics update (animate from old value to new value over 500ms). Implement a subtle glow effect around high-value picks or strong confidence indicators. Add entrance animations for modals and dialogs with backdrop blur and fade-in effects.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/PredictionAndResults.tsx"
+          "frontend/src/hooks/useCountAnimation.ts",
+          "frontend/src/components/Dashboard.tsx",
+          "frontend/src/components/PredictionAndResults.tsx",
+          "frontend/src/components/Settings.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/PredictionAndResults.tsx"
+          "frontend/src/hooks/useCountAnimation.ts",
+          "frontend/src/components/Dashboard.tsx",
+          "frontend/src/components/PredictionAndResults.tsx",
+          "frontend/src/components/Settings.tsx"
         ]
       },
       {
-        "id": "REQ-67",
-        "summary": "Add optional informational indicators to the PredictionAndResults screen showing 'Hot Odds Bucket' (the odds bucket with the best recent performance) and 'Trap Odds Bucket' (the odds bucket with the worst recent performance or highest variance), displaying these in a non-intrusive way that doesn't interfere with the primary workflow",
+        "id": "REQ-125",
+        "summary": "Refine the Settings component in frontend/src/components/Settings.tsx with enhanced visual hierarchy and button styling. Destructive actions (Full Reset) should use crimson with warning icon and require explicit confirmation with typed confirmation. Non-destructive actions should use neutral styling. Export button should use cyan accent. Add descriptive helper text under each action in muted color. Implement a refined dialog design with backdrop blur, smooth scale animation on open, and elegant close button. Add visual indicators showing data counts (e.g., 'X races stored') next to relevant actions.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/PredictionAndResults.tsx"
+          "frontend/src/components/Settings.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/PredictionAndResults.tsx"
-        ]
-      },
-      {
-        "id": "REQ-68",
-        "summary": "Update the signal breakdown calculation logic in statsCalculator.ts to return individual signal components (odds signal, historical bucket signal, recent bucket signal, consistency signal) as separate numeric values that can be displayed in the Secondary Panel, ensuring these values represent the additive or multiplicative contributions to the final adjusted probability",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/statsCalculator.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/statsCalculator.ts"
-        ]
-      },
-      {
-        "id": "REQ-69",
-        "summary": "Restructure the PredictionAndResults component layout hierarchy to organize content into three distinct visual sections: (1) Header section with Strategy Mode and full odds/implied probability display, (2) Primary Panel with recommended bet details, (3) Secondary Panel with signal breakdown and optional bucket indicators, ensuring clear visual hierarchy and spacing between sections",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/PredictionAndResults.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/PredictionAndResults.tsx"
+          "frontend/src/components/Settings.tsx"
         ]
       }
     ]
@@ -83,8 +145,16 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
+    "frontend/src/components/BettingWorkflow.tsx",
+    "frontend/src/components/Dashboard.tsx",
+    "frontend/src/components/Layout.tsx",
+    "frontend/src/components/OddsEntryForm.tsx",
     "frontend/src/components/PredictionAndResults.tsx",
-    "frontend/src/lib/statsCalculator.ts",
+    "frontend/src/components/Settings.tsx",
+    "frontend/src/hooks/useCountAnimation.ts",
+    "frontend/src/index.css",
+    "frontend/tailwind.config.js",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

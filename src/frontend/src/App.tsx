@@ -9,7 +9,18 @@ export default function App() {
       <Layout>
         <BettingWorkflow />
       </Layout>
-      <Toaster />
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          classNames: {
+            toast: 'bg-card border-border/50 shadow-premium',
+            title: 'text-foreground font-bold',
+            description: 'text-muted-foreground',
+            actionButton: 'bg-primary text-primary-foreground',
+            cancelButton: 'bg-muted text-muted-foreground',
+          },
+        }}
+      />
     </ThemeProvider>
   );
 }

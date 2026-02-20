@@ -1,108 +1,66 @@
 /**
- * TypeScript interfaces for AsyncStorage data structures
- * Defines the complete data model for persistent race tracking with odds bucket learning
+ * Complete TypeScript type definitions for race betting storage
+ * CRITICAL: impliedProbabilities must be calculated using 1/(odds+1)
  */
 
-export enum StorageKeys {
-  RACES = 'races',
-  MODEL_STATE = 'modelState',
-  BETTING_HISTORY = 'bettingHistory',
-  ODDS_BUCKET_STATS = 'oddsBucketStats',
+// Strategy modes
+export type StrategyMode = 'safe' | 'balanced' | 'value' | 'aggressive';
+
+// Confidence levels
+export type ConfidenceLevel = 'high' | 'medium' | 'low';
+
+// Odds-only input data
+export interface OddsOnlyData {
+  odds: number[]; // Six odds values (1-30)
 }
 
-/**
- * Immutable race record - all fields are readonly
- * This record is frozen after creation and cannot be modified
- */
-export interface RaceRecord {
-  readonly timestamp: number;
-  readonly odds: readonly number[];
-  readonly impliedProbabilities: readonly number[];
-  readonly strategyMode: string;
-  readonly predictedProbabilities: readonly number[];
-  readonly valueEdge: readonly number[];
-  readonly confidenceLevel: 'high' | 'medium' | 'low';
-  readonly signalBreakdown: readonly SignalData[];
-  readonly recommendedContender: number;
-  readonly recommendedBetSize: number;
-  readonly modelWeightsSnapshot: ModelWeights;
-  readonly actualFirst: number;
-  readonly actualSecond: number;
-  readonly actualThird: number;
-  readonly profitLoss: number;
-}
-
-/**
- * Input type for creating a new race record
- * Used before freezing the record
- */
+// Race record input (before storage)
 export interface RaceRecordInput {
-  odds: number[];
-  impliedProbabilities: number[];
-  strategyMode: string;
-  predictedProbabilities: number[];
-  valueEdge: number[];
-  confidenceLevel: 'high' | 'medium' | 'low';
-  signalBreakdown: SignalData[];
-  recommendedContender: number;
-  recommendedBetSize: number;
-  modelWeightsSnapshot: ModelWeights;
-  actualFirst: number;
-  actualSecond: number;
-  actualThird: number;
-  profitLoss: number;
+  odds: number[]; // Six odds values
+  impliedProbabilities: number[]; // Six implied probabilities calculated as 1/(odds+1)
+  adjustedProbabilities: number[]; // Six adjusted probabilities after model processing
+  recommendedContender: number; // Index 0-5
+  recommendedBetSize: number; // System-recommended dollar amount
+  betAmount: number; // User-selected bet amount (from slider)
+  actualFirst: number; // Index 0-5
+  actualSecond: number; // Index 0-5
+  actualThird: number; // Index 0-5
+  profitLoss: number; // Calculated using correct fractional odds payout and user-selected bet amount
+  confidenceLevel: ConfidenceLevel;
+  strategyMode: StrategyMode;
+  timestamp: number;
 }
 
-/**
- * Signal data for a single contender
- */
-export interface SignalData {
-  contenderIndex: number;
-  signalStrength: number;
-  confidence: number;
+// Race record (stored with ID)
+export interface RaceRecord extends RaceRecordInput {
+  raceId: string;
 }
 
-/**
- * Model weights snapshot at time of prediction
- */
-export interface ModelWeights {
-  oddsWeight: number;
-  formWeight: number;
-  trustWeight: number;
-}
-
-/**
- * Cumulative betting history statistics
- */
+// Betting history (cumulative)
 export interface BettingHistory {
-  cumulativeROI: number;
+  cumulativeROI: number; // Percentage
   totalRaces: number;
   totalWins: number;
-  totalProfit: number;
-  totalInvested: number;
-  winRate: number;
+  totalProfit: number; // Dollar amount
+  totalInvested: number; // Dollar amount
+  winRate: number; // Percentage
   lastUpdated: number;
 }
 
-/**
- * Statistics for a single odds bucket
- * Nine required fields including averageImpliedProbability
- */
+// Odds bucket (single bucket statistics)
 export interface OddsBucket {
   totalRaces: number;
   wins: number;
   top3Finishes: number;
-  totalImpliedProbability: number;
-  averageImpliedProbability: number;
-  actualWinRate: number;
-  roiIfFlatBet: number;
+  totalImpliedProbability: number; // Sum of all implied probabilities (calculated as 1/(odds+1))
+  averageImpliedProbability: number; // Average implied probability (calculated as 1/(odds+1))
+  actualWinRate: number; // Percentage
+  roiIfFlatBet: number; // Percentage (uses correct fractional odds payout)
   varianceScore: number;
-  recentWindowPerformance: number;
+  recentWindowPerformance: number; // Percentage
 }
 
-/**
- * Statistics for all four odds buckets
- */
+// Odds bucket statistics (all four buckets)
 export interface OddsBucketStats {
   '1-2': OddsBucket;
   '3-5': OddsBucket;
@@ -110,66 +68,57 @@ export interface OddsBucketStats {
   '11-30': OddsBucket;
 }
 
-/**
- * Signal weights for the prediction model
- */
+// Signal weights for prediction engine
 export interface SignalWeights {
-  oddsWeight: number;
-  historicalBucketWeight: number;
-  recentBucketWeight: number;
-  consistencyWeight: number;
+  oddsWeight: number; // 0-1
+  historicalBucketWeight: number; // 0-1
+  recentBucketWeight: number; // 0-1
+  consistencyWeight: number; // 0-1
+  // Sum must equal 1.0
 }
 
-/**
- * Drift detection state
- */
+// Drift detection state
 export interface DriftDetectionState {
-  baselineAccuracy: number;
-  currentAccuracy: number;
-  driftScore: number;
+  driftDetected: boolean;
   lastDriftCheck: number;
+  consecutiveDriftCount: number;
 }
 
-/**
- * Complete model state
- */
+// Model state (learning weights and calibration)
 export interface ModelState {
-  lastUpdated: number;
-  totalRacesProcessed: number;
   signalWeights: SignalWeights;
-  calibrationScalar: number;
-  confidenceScalingFactor: number;
-  recentAccuracyWindow: number;
+  calibrationScalar: number; // 0.5-1.5
   driftDetectionState: DriftDetectionState;
-  raceCount: number;
+  lastUpdated: number;
 }
 
-/**
- * Confidence-segmented statistics
- */
+// Confidence-segmented statistics
+export interface ConfidenceSegment {
+  totalRaces: number;
+  wins: number;
+  totalProfit: number;
+  totalInvested: number;
+  roi: number; // Percentage
+  winRate: number; // Percentage
+}
+
 export interface ConfidenceStats {
-  high: {
-    totalRaces: number;
-    wins: number;
-    winRate: number;
-    totalProfit: number;
-    totalInvested: number;
-    roi: number;
-  };
-  medium: {
-    totalRaces: number;
-    wins: number;
-    winRate: number;
-    totalProfit: number;
-    totalInvested: number;
-    roi: number;
-  };
-  low: {
-    totalRaces: number;
-    wins: number;
-    winRate: number;
-    totalProfit: number;
-    totalInvested: number;
-    roi: number;
-  };
+  high: ConfidenceSegment;
+  medium: ConfidenceSegment;
+  low: ConfidenceSegment;
+}
+
+// Calibration update result
+export interface CalibrationUpdate {
+  newCalibrationScalar: number;
+  adjustmentApplied: boolean;
+  reason: string;
+}
+
+// Drift detection result
+export interface DriftDetectionResult {
+  driftDetected: boolean;
+  recentROI: number;
+  historicalROI: number;
+  threshold: number;
 }

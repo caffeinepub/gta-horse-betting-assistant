@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 21,
+  "projectStateVersion": 35,
   "summary": "GTA Online horse betting assistant that anchors predictions to odds, learns from race outcomes, improves probability calibration and ROI through value detection, updates internal trust weights, and resets after every race. Primary workflow: Enter Odds → Get Pick → Log Results → Learn → Reset → Repeat.",
   "architectural_notes": [
     "Odds-anchored prediction model as core engine",
@@ -14,8 +14,10 @@
     "Primary UI loop consists of exactly three screens: Dashboard, Odds Entry, and Prediction + Results (combined)",
     "All other screens are secondary and must not interrupt the main race loop"
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Implied probability calculation may be using 1/X instead of 1/(X+1), causing calibration/ROI/value edge failures"
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-build-odds-entry-interface-that-allows-fast-input-of-horse-names-and-their-betting-odds",
@@ -480,6 +482,454 @@
         "REQ-69"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-create-a-result-logging-interface-in-predictionandresults-component-that-displays-three-rows-labeled-1st-place-2nd-place-and-3rd-place-each-row-must-contain-a-dropdown-or-selection-control-allowing-the-user-to-select-one-contender-1-6-initialize-all-three-selections-as-blank-unselected-when-the-interface-loads",
+      "title": "Create a result logging interface in PredictionAndResults component that displays three rows labeled '1st Place', '2nd Place', and '3rd Place'. Each row must contain a dropdown or selection control allowing the user to select one contender (#1-#6). Initialize all three selections as blank/unselected when the interface loads.",
+      "reqIds": [
+        "REQ-70"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-duplicate-prevention-logic-in-the-result-logging-interface-that-prevents-the-same-contender-from-being-selected-in-multiple-finish-positions-if-a-contender-is-selected-for-1st-place-disable-or-remove-that-option-from-2nd-and-3rd-place-dropdowns-if-a-contender-is-selected-for-2nd-place-disable-it-in-3rd-place",
+      "title": "Implement duplicate prevention logic in the result logging interface that prevents the same contender from being selected in multiple finish positions. If a contender is selected for 1st place, disable or remove that option from 2nd and 3rd place dropdowns. If a contender is selected for 2nd place, disable it in 3rd place.",
+      "reqIds": [
+        "REQ-71"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-validation-logic-that-enables-the-enter-save-result-button-only-when-valid-finish-selections-are-present-the-button-must-be-disabled-until-1-1st-place-contender-is-selected-2-2nd-place-contender-is-selected-3-3rd-place-contender-is-selected-and-4-all-three-selections-are-different-contenders",
+      "title": "Implement validation logic that enables the 'ENTER / SAVE RESULT' button only when valid finish selections are present. The button must be disabled until: (1) 1st place contender is selected, (2) 2nd place contender is selected, (3) 3rd place contender is selected, and (4) all three selections are different contenders.",
+      "reqIds": [
+        "REQ-72"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-the-complete-save-result-workflow-in-predictionandresults-component-when-the-enter-save-result-button-is-pressed-1-create-complete-race-record-with-odds-implied-probabilities-strategy-mode-predicted-probabilities-signal-breakdown-recommended-contender-recommended-bet-size-model-weights-snapshot-actualfirst-second-third-from-user-selections-and-calculated-profit-loss-2-save-the-race-record-to-asyncstorage-races-array-using-useracestorage-hook-3-trigger-recalculation-of-oddsbucketstats-from-the-updated-races-array-4-trigger-gradual-model-weight-updates-based-on-prediction-accuracy-implemented-in-req-75-5-update-calibrationscalar-based-on-prediction-vs-outcome-comparison-6-rebuild-bettinghistory-statistics-from-the-updated-races-array-7-snapshot-the-previous-modelstate-before-applying-updates",
+      "title": "Implement the complete save result workflow in PredictionAndResults component. When the 'ENTER / SAVE RESULT' button is pressed: (1) Create complete race record with odds, implied probabilities, strategy mode, predicted probabilities, signal breakdown, recommended contender, recommended bet size, model weights snapshot, actualFirst/Second/Third from user selections, and calculated profit/loss. (2) Save the race record to AsyncStorage races array using useRaceStorage hook. (3) Trigger recalculation of oddsBucketStats from the updated races array. (4) Trigger gradual model weight updates based on prediction accuracy (implemented in REQ-75). (5) Update calibrationScalar based on prediction vs outcome comparison. (6) Rebuild bettingHistory statistics from the updated races array. (7) Snapshot the previous modelState before applying updates.",
+      "reqIds": [
+        "REQ-74"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-gradual-weight-updating-logic-in-frontend-src-lib-statscalculator-ts-that-adjusts-signalweights-based-on-prediction-accuracy-after-each-race-1-compare-the-predicted-probability-of-the-winner-to-the-implied-probability-of-the-winner-2-calculate-which-signal-components-historical-bucket-signal-recent-bucket-signal-consistency-signal-contributed-to-the-adjustment-3-if-the-bucket-adjustment-signals-improved-accuracy-predicted-probability-was-closer-to-100-than-implied-probability-increase-the-corresponding-signal-weights-slightly-e-g-by-1-3-4-if-the-bucket-adjustment-signals-hurt-accuracy-predicted-probability-was-farther-from-100-than-implied-probability-decrease-the-corresponding-weights-slightly-e-g-by-1-3-5-apply-small-gradual-weight-changes-with-no-dramatic-swings-6-enforce-bounds-on-weights-to-prevent-them-from-going-negative-or-exceeding-reasonable-maximums-e-g-0-0-to-2-0-7-return-updated-signalweights-object-for-persistence-to-modelstate",
+      "title": "Implement gradual weight updating logic in frontend/src/lib/statsCalculator.ts that adjusts signalWeights based on prediction accuracy. After each race: (1) Compare the predicted probability of the winner to the implied probability of the winner. (2) Calculate which signal components (Historical Bucket Signal, Recent Bucket Signal, Consistency Signal) contributed to the adjustment. (3) If the bucket-adjustment signals improved accuracy (predicted probability was closer to 100% than implied probability), increase the corresponding signal weights slightly (e.g., by 1-3%). (4) If the bucket-adjustment signals hurt accuracy (predicted probability was farther from 100% than implied probability), decrease the corresponding weights slightly (e.g., by 1-3%). (5) Apply small, gradual weight changes with no dramatic swings. (6) Enforce bounds on weights to prevent them from going negative or exceeding reasonable maximums (e.g., 0.0 to 2.0). (7) Return updated signalWeights object for persistence to modelState.",
+      "reqIds": [
+        "REQ-75"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-integrate-the-gradual-weight-updating-function-into-the-save-result-workflow-in-predictionandresults-component-after-saving-the-race-record-call-the-weight-updating-function-with-the-race-outcome-data-retrieve-the-updated-signalweights-and-persist-them-to-modelstate-in-asyncstorage-using-the-writemodelstate-function",
+      "title": "Integrate the gradual weight updating function into the save result workflow in PredictionAndResults component. After saving the race record, call the weight updating function with the race outcome data, retrieve the updated signalWeights, and persist them to modelState in AsyncStorage using the writeModelState function.",
+      "reqIds": [
+        "REQ-76"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-post-save-ui-workflow-in-predictionandresults-component-after-all-race-data-updates-complete-successfully-1-display-a-race-saved-success-message-for-exactly-1-second-2-automatically-transition-back-to-the-odds-entry-screen-tab-phase-3-trigger-a-workflow-reset-that-clears-all-race-state-and-returns-the-application-to-entry-phase-ensure-no-user-confirmation-or-additional-clicks-are-required",
+      "title": "Implement post-save UI workflow in PredictionAndResults component. After all race data updates complete successfully: (1) Display a 'Race Saved' success message for exactly 1 second. (2) Automatically transition back to the Odds Entry screen (tab/phase). (3) Trigger a workflow reset that clears all race state and returns the application to entry phase. Ensure no user confirmation or additional clicks are required.",
+      "reqIds": [
+        "REQ-77"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-calibration-update-logic-in-frontend-src-lib-statscalculator-ts-that-compares-the-predicted-probability-distribution-to-actual-race-outcomes-after-each-race-calculate-calibration-error-by-comparing-predicted-probabilities-to-actual-results-winner-100-losers-0-if-the-system-is-consistently-overconfident-predicted-probabilities-are-higher-than-actual-performance-warrants-reduce-calibrationscalar-by-a-small-percentage-e-g-2-5-if-well-calibrated-or-underconfident-maintain-or-slightly-increase-calibrationscalar-return-the-updated-calibrationscalar-value-for-persistence-to-modelstate",
+      "title": "Implement calibration update logic in frontend/src/lib/statsCalculator.ts that compares the predicted probability distribution to actual race outcomes. After each race, calculate calibration error by comparing predicted probabilities to actual results (winner = 100%, losers = 0%). If the system is consistently overconfident (predicted probabilities are higher than actual performance warrants), reduce calibrationScalar by a small percentage (e.g., 2-5%). If well-calibrated or underconfident, maintain or slightly increase calibrationScalar. Return the updated calibrationScalar value for persistence to modelState.",
+      "reqIds": [
+        "REQ-79"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-integrate-calibration-update-logic-into-the-save-result-workflow-in-predictionandresults-component-after-saving-the-race-record-and-before-updating-modelstate-call-the-calibration-update-function-with-the-race-s-predicted-probabilities-and-actual-outcome-retrieve-the-updated-calibrationscalar-and-include-it-in-the-modelstate-update-that-gets-persisted-to-asyncstorage",
+      "title": "Integrate calibration update logic into the save result workflow in PredictionAndResults component. After saving the race record and before updating modelState, call the calibration update function with the race's predicted probabilities and actual outcome. Retrieve the updated calibrationScalar and include it in the modelState update that gets persisted to AsyncStorage.",
+      "reqIds": [
+        "REQ-80"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-drift-detection-system-in-frontend-src-lib-statscalculator-ts-that-triggers-every-20-races-when-racecount-20-0-compare-expected-wins-sum-of-all-predicted-probabilities-for-winners-over-the-last-20-races-against-actual-wins-count-of-races-where-the-recommended-pick-won-if-the-deviation-exceeds-a-defined-threshold-e-g-15-difference-return-drift-detection-flags-indicating-drift-is-present-calculate-temporary-weight-adjustments-that-decrease-historicalbucketweight-and-increase-recentbucketweight-to-adapt-to-behavioral-shifts",
+      "title": "Implement drift detection system in frontend/src/lib/statsCalculator.ts that triggers every 20 races (when raceCount % 20 === 0). Compare expected wins (sum of all predicted probabilities for winners over the last 20 races) against actual wins (count of races where the recommended pick won). If the deviation exceeds a defined threshold (e.g., >15% difference), return drift detection flags indicating drift is present. Calculate temporary weight adjustments that decrease historicalBucketWeight and increase recentBucketWeight to adapt to behavioral shifts.",
+      "reqIds": [
+        "REQ-81"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-modelstate-storage-schema-in-frontend-src-types-storage-ts-to-add-driftdetected-boolean-flag-and-driftadjustmentactive-boolean-flag-to-the-driftdetectionstate-type-store-the-race-number-when-drift-was-last-detected-and-the-temporary-weight-adjustments-being-applied",
+      "title": "Update modelState storage schema in frontend/src/types/storage.ts to add driftDetected boolean flag and driftAdjustmentActive boolean flag to the DriftDetectionState type. Store the race number when drift was last detected and the temporary weight adjustments being applied.",
+      "reqIds": [
+        "REQ-82"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-integrate-drift-detection-into-the-save-result-workflow-in-predictionandresults-component-every-20-races-after-updating-the-race-record-call-the-drift-detection-function-with-the-last-20-race-records-if-drift-is-detected-update-the-driftdetectionstate-in-modelstate-with-drift-flags-and-temporary-weight-adjustments-apply-the-temporary-weight-adjustments-to-signalweights-for-the-next-prediction-cycle",
+      "title": "Integrate drift detection into the save result workflow in PredictionAndResults component. Every 20 races, after updating the race record, call the drift detection function with the last 20 race records. If drift is detected, update the driftDetectionState in modelState with drift flags and temporary weight adjustments. Apply the temporary weight adjustments to signalWeights for the next prediction cycle.",
+      "reqIds": [
+        "REQ-83"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-racerecord-type-definition-in-frontend-src-types-storage-ts-to-add-a-previousmodelstatesnapshot-field-that-stores-a-complete-copy-of-the-modelstate-immediately-before-any-updates-are-applied-this-snapshot-must-include-signalweights-calibrationscalar-confidencescalingfactor-recentaccuracywindow-driftdetectionstate-and-racecount-from-the-moment-before-the-race-result-was-processed",
+      "title": "Update the RaceRecord type definition in frontend/src/types/storage.ts to add a previousModelStateSnapshot field that stores a complete copy of the modelState immediately before any updates are applied. This snapshot must include signalWeights, calibrationScalar, confidenceScalingFactor, recentAccuracyWindow, driftDetectionState, and raceCount from the moment before the race result was processed.",
+      "reqIds": [
+        "REQ-84"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-save-result-workflow-in-predictionandresults-component-to-capture-a-complete-snapshot-of-the-current-modelstate-before-applying-any-updates-weight-updates-calibration-updates-drift-detection-store-this-snapshot-in-the-race-record-s-previousmodelstatesnapshot-field-when-saving-the-race-record-to-asyncstorage-this-enables-exact-undo-functionality",
+      "title": "Update the save result workflow in PredictionAndResults component to capture a complete snapshot of the current modelState before applying any updates (weight updates, calibration updates, drift detection). Store this snapshot in the race record's previousModelStateSnapshot field when saving the race record to AsyncStorage. This enables exact undo functionality.",
+      "reqIds": [
+        "REQ-85"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-undo-last-race-functionality-in-frontend-src-lib-storage-ts-that-1-retrieves-the-races-array-from-asyncstorage-2-removes-the-last-race-record-from-the-array-3-retrieves-the-previousmodelstatesnapshot-from-the-removed-race-record-4-restores-modelstate-to-the-snapshot-values-5-triggers-rebuild-of-bettinghistory-and-oddsbucketstats-from-the-remaining-race-records-6-persists-the-updated-races-array-restored-modelstate-and-rebuilt-statistics-to-asyncstorage-7-notifies-storage-listeners-of-the-changes-the-undo-operation-must-be-atomic-and-exact",
+      "title": "Implement Undo Last Race functionality in frontend/src/lib/storage.ts that: (1) Retrieves the races array from AsyncStorage. (2) Removes the last race record from the array. (3) Retrieves the previousModelStateSnapshot from the removed race record. (4) Restores modelState to the snapshot values. (5) Triggers rebuild of bettingHistory and oddsBucketStats from the remaining race records. (6) Persists the updated races array, restored modelState, and rebuilt statistics to AsyncStorage. (7) Notifies storage listeners of the changes. The undo operation must be atomic and exact.",
+      "reqIds": [
+        "REQ-86"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-useundorace-custom-hook-in-frontend-src-hooks-useundorace-ts-that-wraps-the-undo-functionality-from-storage-ts-providing-loading-state-error-handling-and-a-mutation-function-that-can-be-called-from-ui-components-the-hook-should-return-success-failure-status-and-handle-edge-cases-like-attempting-to-undo-when-no-races-exist",
+      "title": "Create a useUndoRace custom hook in frontend/src/hooks/useUndoRace.ts that wraps the undo functionality from storage.ts, providing loading state, error handling, and a mutation function that can be called from UI components. The hook should return success/failure status and handle edge cases like attempting to undo when no races exist.",
+      "reqIds": [
+        "REQ-87"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-completely-redesign-the-dashboard-component-in-frontend-src-components-dashboard-tsx-to-display-1-core-metrics-section-showing-total-races-total-profit-loss-roi-overall-accuracy-and-recent-accuracy-for-last-10-races-2-model-health-section-showing-calibration-score-calibrationscalar-value-with-interpretation-current-confidence-level-high-medium-low-and-drift-status-indicator-if-drift-is-detected-3-bucket-performance-section-showing-best-performing-odds-bucket-and-worst-performing-odds-bucket-by-roi-4-strategy-indicator-showing-current-strategy-mode-5-session-lifetime-toggle-allowing-users-to-view-session-only-statistics-or-lifetime-statistics-remove-the-existing-roidashboard-integration-and-instructional-cards",
+      "title": "Completely redesign the Dashboard component in frontend/src/components/Dashboard.tsx to display: (1) Core metrics section showing total races, total profit/loss ($), ROI (%), overall accuracy (%), and recent accuracy for last 10 races (%). (2) Model health section showing calibration score (calibrationScalar value with interpretation), current confidence level (high/medium/low), and drift status indicator if drift is detected. (3) Bucket performance section showing best performing odds bucket and worst performing odds bucket by ROI. (4) Strategy indicator showing current strategy mode. (5) Session/Lifetime toggle allowing users to view session-only statistics or lifetime statistics. Remove the existing ROIDashboard integration and instructional cards.",
+      "reqIds": [
+        "REQ-88"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-primary-action-button-labeled-start-new-race-to-the-dashboard-component-that-navigates-to-the-odds-entry-screen-when-clicked-add-secondary-action-buttons-labeled-history-stats-settings-and-reset-below-the-primary-button-the-start-new-race-button-should-be-prominent-and-visually-distinct-from-secondary-buttons",
+      "title": "Add primary action button labeled 'START NEW RACE' to the Dashboard component that navigates to the Odds Entry screen when clicked. Add secondary action buttons labeled 'History', 'Stats', 'Settings', and 'Reset' below the primary button. The 'START NEW RACE' button should be prominent and visually distinct from secondary buttons.",
+      "reqIds": [
+        "REQ-89"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-session-statistics-tracking-system-in-frontend-src-lib-storage-ts-that-maintains-separate-statistics-for-the-current-session-define-a-sessionstart-timestamp-that-is-set-when-the-app-loads-implement-functions-to-calculate-session-only-metrics-races-profit-loss-roi-accuracy-by-filtering-race-records-to-only-those-after-sessionstart-store-sessionstart-in-localstorage-and-reset-it-only-on-explicit-soft-reset",
+      "title": "Create session statistics tracking system in frontend/src/lib/storage.ts that maintains separate statistics for the current session. Define a sessionStart timestamp that is set when the app loads. Implement functions to calculate session-only metrics (races, profit/loss, ROI, accuracy) by filtering race records to only those after sessionStart. Store sessionStart in localStorage and reset it only on explicit soft reset.",
+      "reqIds": [
+        "REQ-90"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-soft-reset-functionality-in-frontend-src-lib-storage-ts-that-1-sets-a-new-sessionstart-timestamp-to-the-current-time-2-preserves-all-race-records-modelstate-bettinghistory-and-oddsbucketstats-in-asyncstorage-3-does-not-delete-any-learning-data-4-notifies-storage-listeners-that-session-has-been-reset-this-allows-users-to-track-session-performance-separately-while-maintaining-long-term-learning",
+      "title": "Implement Soft Reset functionality in frontend/src/lib/storage.ts that: (1) Sets a new sessionStart timestamp to the current time. (2) Preserves all race records, modelState, bettingHistory, and oddsBucketStats in AsyncStorage. (3) Does NOT delete any learning data. (4) Notifies storage listeners that session has been reset. This allows users to track session performance separately while maintaining long-term learning.",
+      "reqIds": [
+        "REQ-91"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-full-reset-functionality-in-frontend-src-lib-storage-ts-that-1-deletes-all-race-records-from-the-races-array-2-resets-modelstate-to-default-initialization-values-3-deletes-all-bettinghistory-statistics-4-deletes-all-oddsbucketstats-5-sets-a-new-sessionstart-timestamp-6-persists-the-empty-default-state-to-asyncstorage-7-notifies-storage-listeners-of-the-reset-this-provides-a-complete-data-wipe-for-users-who-want-to-start-fresh",
+      "title": "Implement Full Reset functionality in frontend/src/lib/storage.ts that: (1) Deletes all race records from the races array. (2) Resets modelState to default initialization values. (3) Deletes all bettingHistory statistics. (4) Deletes all oddsBucketStats. (5) Sets a new sessionStart timestamp. (6) Persists the empty/default state to AsyncStorage. (7) Notifies storage listeners of the reset. This provides a complete data wipe for users who want to start fresh.",
+      "reqIds": [
+        "REQ-92"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-settings-modal-or-screen-component-in-frontend-src-components-settings-tsx-that-provides-1-soft-reset-button-with-confirmation-dialog-explaining-that-session-stats-will-reset-but-learning-data-will-be-preserved-2-full-reset-button-with-strong-confirmation-dialog-warning-that-all-data-will-be-permanently-deleted-3-undo-last-race-button-that-calls-the-useundorace-hook-4-clear-visual-distinction-between-destructive-actions-full-reset-in-red-and-non-destructive-actions-soft-reset-in-neutral-color",
+      "title": "Create a Settings modal or screen component in frontend/src/components/Settings.tsx that provides: (1) Soft Reset button with confirmation dialog explaining that session stats will reset but learning data will be preserved. (2) Full Reset button with strong confirmation dialog warning that ALL data will be permanently deleted. (3) Undo Last Race button that calls the useUndoRace hook. (4) Clear visual distinction between destructive actions (Full Reset in red) and non-destructive actions (Soft Reset in neutral color).",
+      "reqIds": [
+        "REQ-93"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-data-export-functionality-in-frontend-src-lib-storage-ts-with-a-function-exportalldata-that-1-retrieves-races-array-modelstate-bettinghistory-and-oddsbucketstats-from-asyncstorage-2-creates-a-json-object-containing-all-four-data-structures-with-clear-labeling-3-generates-a-formatted-json-string-with-proper-indentation-4-creates-a-blob-from-the-json-string-with-type-application-json-5-triggers-browser-download-with-filename-format-gta-betting-export-yyyy-mm-dd-hhmmss-json-the-export-must-include-all-data-needed-to-reconstruct-the-current-system-state",
+      "title": "Implement data export functionality in frontend/src/lib/storage.ts with a function exportAllData() that: (1) Retrieves races array, modelState, bettingHistory, and oddsBucketStats from AsyncStorage. (2) Creates a JSON object containing all four data structures with clear labeling. (3) Generates a formatted JSON string with proper indentation. (4) Creates a Blob from the JSON string with type 'application/json'. (5) Triggers browser download with filename format 'gta-betting-export-YYYY-MM-DD-HHmmss.json'. The export must include all data needed to reconstruct the current system state.",
+      "reqIds": [
+        "REQ-94"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-export-data-button-to-the-settings-screen-that-calls-the-exportalldata-function-when-clicked-display-a-success-message-after-export-completes-handle-export-errors-gracefully-with-user-friendly-error-messages",
+      "title": "Add an Export Data button to the Settings screen that calls the exportAllData() function when clicked. Display a success message after export completes. Handle export errors gracefully with user-friendly error messages.",
+      "reqIds": [
+        "REQ-95"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-dashboard-button-group-to-make-the-settings-button-functional-opening-the-settings-modal-screen-when-clicked-ensure-the-settings-screen-can-be-accessed-from-the-dashboard-and-includes-all-reset-and-export-functionality",
+      "title": "Update the Dashboard button group to make the Settings button functional, opening the Settings modal/screen when clicked. Ensure the Settings screen can be accessed from the Dashboard and includes all reset and export functionality.",
+      "reqIds": [
+        "REQ-96"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-statscalculator-ts-to-implement-helper-functions-for-calculating-recent-accuracy-last-10-races-and-determining-best-worst-performing-odds-buckets-by-roi-recent-accuracy-should-count-how-many-of-the-last-10-recommended-picks-won-best-worst-bucket-functions-should-compare-roi-across-all-four-odds-buckets-and-return-the-bucket-identifier-with-highest-lowest-roi",
+      "title": "Update statsCalculator.ts to implement helper functions for calculating recent accuracy (last 10 races) and determining best/worst performing odds buckets by ROI. Recent accuracy should count how many of the last 10 recommended picks won. Best/worst bucket functions should compare ROI across all four odds buckets and return the bucket identifier with highest/lowest ROI.",
+      "reqIds": [
+        "REQ-97"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-backend-data-model-to-store-race-history-including-horse-identifiers-odds-predicted-probabilities-actual-outcomes-and-timestamp",
+      "title": "Create backend data model to store race history including horse identifiers, odds, predicted probabilities, actual outcomes, and timestamp",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-odds-to-probability-conversion-algorithm-that-anchors-all-predictions-to-the-entered-odds",
+      "title": "Implement odds-to-probability conversion algorithm that anchors all predictions to the entered odds",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-learning-system-that-updates-internal-trust-weights-based-on-prediction-accuracy-and-actual-race-outcomes",
+      "title": "Build learning system that updates internal trust weights based on prediction accuracy and actual race outcomes",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-value-bet-detection-algorithm-that-identifies-horses-with-positive-expected-value-based-on-odds-vs-calibrated-probabilities",
+      "title": "Implement value bet detection algorithm that identifies horses with positive expected value based on odds vs calibrated probabilities",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-roi-tracking-system-that-calculates-cumulative-return-on-investment-across-all-logged-races",
+      "title": "Create ROI tracking system that calculates cumulative return on investment across all logged races",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-oddsentryform-component-in-frontend-src-components-oddsentryform-tsx-to-use-the-correct-fractional-odds-implied-probability-formula-1-odds-1-instead-of-1-odds-when-a-user-enters-an-odds-value-x-compute-implied-probability-as-1-x-1-and-display-it-as-a-percentage-examples-1-1-50-2-1-33-33-5-1-16-67-10-1-9-09-30-1-3-23",
+      "title": "Update OddsEntryForm component in frontend/src/components/OddsEntryForm.tsx to use the correct fractional odds implied probability formula: 1 / (odds + 1) instead of 1 / odds. When a user enters an odds value X, compute implied probability as 1 / (X + 1) and display it as a percentage. Examples: 1/1 = 50%, 2/1 = 33.33%, 5/1 = 16.67%, 10/1 = 9.09%, 30/1 = 3.23%.",
+      "reqIds": [
+        "REQ-100"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-prediction-engine-function-in-frontend-src-lib-statscalculator-ts-to-use-the-correct-fractional-odds-formula-throughout-step-1-compute-implied-probabilities-replace-any-occurrence-of-1-odds-with-1-odds-1-the-baseline-implied-probability-must-include-the-stake-in-the-denominator-before-any-bucket-adjustments-are-applied",
+      "title": "Update the prediction engine function in frontend/src/lib/statsCalculator.ts to use the correct fractional odds formula throughout step 1 (compute implied probabilities). Replace any occurrence of 1/odds with 1/(odds+1). The baseline implied probability must include the stake in the denominator before any bucket adjustments are applied.",
+      "reqIds": [
+        "REQ-101"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-predictionandresults-component-in-frontend-src-components-predictionandresults-tsx-to-use-the-correct-fractional-odds-formula-when-displaying-implied-probabilities-ensure-that-any-local-calculation-or-display-of-implied-probability-uses-1-odds-1-not-1-odds",
+      "title": "Update PredictionAndResults component in frontend/src/components/PredictionAndResults.tsx to use the correct fractional odds formula when displaying implied probabilities. Ensure that any local calculation or display of implied probability uses 1 / (odds + 1), not 1 / odds.",
+      "reqIds": [
+        "REQ-102"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-all-bucket-statistics-calculation-functions-in-frontend-src-lib-statscalculator-ts-to-ensure-averageimpliedprobability-for-each-odds-bucket-is-computed-from-race-records-using-the-formula-1-odds-1-recalculate-totalimpliedprobability-for-each-bucket-as-the-sum-of-1-odds-1-for-all-races-in-that-bucket",
+      "title": "Update all bucket statistics calculation functions in frontend/src/lib/statsCalculator.ts to ensure averageImpliedProbability for each odds bucket is computed from race records using the formula 1 / (odds + 1). Recalculate totalImpliedProbability for each bucket as the sum of 1/(odds+1) for all races in that bucket.",
+      "reqIds": [
+        "REQ-103"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-calibration-update-logic-in-frontend-src-lib-statscalculator-ts-to-ensure-calibration-error-calculation-compares-predicted-probabilities-against-implied-probabilities-computed-as-1-odds-1-the-calibrationscalar-adjustment-must-be-based-on-the-correct-baseline-implied-probability",
+      "title": "Update calibration update logic in frontend/src/lib/statsCalculator.ts to ensure calibration error calculation compares predicted probabilities against implied probabilities computed as 1 / (odds + 1). The calibrationScalar adjustment must be based on the correct baseline implied probability.",
+      "reqIds": [
+        "REQ-104"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-gradual-weight-updating-logic-in-frontend-src-lib-statscalculator-ts-to-compare-predicted-probability-against-implied-probability-calculated-as-1-odds-1-when-determining-if-bucket-adjustment-signals-improved-or-hurt-accuracy-signal-weight-increments-decrements-must-be-based-on-the-correct-baseline",
+      "title": "Update gradual weight updating logic in frontend/src/lib/statsCalculator.ts to compare predicted probability against implied probability calculated as 1 / (odds + 1) when determining if bucket-adjustment signals improved or hurt accuracy. Signal weight increments/decrements must be based on the correct baseline.",
+      "reqIds": [
+        "REQ-105"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-drift-detection-system-in-frontend-src-lib-statscalculator-ts-to-calculate-expected-wins-using-predicted-probabilities-that-are-anchored-to-implied-probabilities-computed-as-1-odds-1-the-comparison-of-expected-vs-actual-wins-must-use-the-correct-baseline-probability-formula",
+      "title": "Update drift detection system in frontend/src/lib/statsCalculator.ts to calculate expected wins using predicted probabilities that are anchored to implied probabilities computed as 1 / (odds + 1). The comparison of expected vs actual wins must use the correct baseline probability formula.",
+      "reqIds": [
+        "REQ-106"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-roi-calculation-logic-in-frontend-src-lib-statscalculator-ts-and-all-components-that-compute-profit-loss-to-use-the-correct-fractional-odds-payout-formula-for-odds-x-1-a-winning-1-bet-returns-x-1-total-x-profit-1-stake-profit-betamount-odds-total-return-betamount-odds-1",
+      "title": "Update ROI calculation logic in frontend/src/lib/statsCalculator.ts and all components that compute profit/loss to use the correct fractional odds payout formula. For odds X/1, a winning $1 bet returns $(X + 1) total (X profit + 1 stake). Profit = betAmount × odds. Total return = betAmount × (odds + 1).",
+      "reqIds": [
+        "REQ-107"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-bet-sizing-algorithm-in-frontend-src-lib-statscalculator-ts-to-ensure-value-edge-calculations-use-implied-probability-computed-as-1-odds-1-the-bet-size-recommendation-must-be-based-on-accurate-value-edge-adjusted-probability-implied-probability-where-implied-1-odds-1",
+      "title": "Update bet sizing algorithm in frontend/src/lib/statsCalculator.ts to ensure value edge calculations use implied probability computed as 1 / (odds + 1). The bet size recommendation must be based on accurate value edge (Adjusted Probability - Implied Probability where Implied = 1/(odds+1)).",
+      "reqIds": [
+        "REQ-108"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-overround-calculation-and-display-validation-to-oddsentryform-component-calculate-total-implied-probability-as-the-sum-of-all-six-1-odds-1-values-display-the-total-percentage-show-a-visual-warning-indicator-if-the-total-exceeds-100-indicating-bookmaker-overround-include-explanatory-text-that-real-markets-often-have-overround-100",
+      "title": "Add overround calculation and display validation to OddsEntryForm component. Calculate total implied probability as the sum of all six 1/(odds+1) values. Display the total percentage. Show a visual warning indicator if the total exceeds 100%, indicating bookmaker overround. Include explanatory text that real markets often have overround > 100%.",
+      "reqIds": [
+        "REQ-110"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-validation-to-frontend-src-lib-storage-ts-and-frontend-src-types-storage-ts-to-ensure-all-persisted-race-records-store-impliedprobabilities-as-an-array-of-6-decimal-values-calculated-using-1-odds-1-when-rebuilding-derived-statistics-from-race-records-verify-that-implied-probabilities-match-the-correct-formula-and-recalculate-if-necessary",
+      "title": "Add validation to frontend/src/lib/storage.ts and frontend/src/types/storage.ts to ensure all persisted race records store impliedProbabilities as an array of 6 decimal values calculated using 1 / (odds + 1). When rebuilding derived statistics from race records, verify that implied probabilities match the correct formula and recalculate if necessary.",
+      "reqIds": [
+        "REQ-111"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-predictionandresults-component-in-frontend-src-components-predictionandresults-tsx-to-add-a-bet-size-adjustment-slider-control-that-allows-users-to-select-a-bet-amount-between-1-000-and-10-000-in-1-000-increments-position-the-slider-prominently-in-the-primary-panel-below-the-recommended-bet-display",
+      "title": "Update PredictionAndResults component in frontend/src/components/PredictionAndResults.tsx to add a bet size adjustment slider control that allows users to select a bet amount between $1,000 and $10,000 in $1,000 increments. Position the slider prominently in the Primary Panel below the recommended bet display.",
+      "reqIds": [
+        "REQ-112"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-real-time-profit-calculation-logic-in-predictionandresults-component-that-computes-potential-winnings-based-on-the-slider-selected-bet-amount-and-the-recommended-pick-s-odds-display-the-calculation-as-potential-profit-x-or-potential-return-y-using-the-correct-fractional-odds-payout-formula-profit-betamount-odds-total-return-betamount-odds-1",
+      "title": "Implement real-time profit calculation logic in PredictionAndResults component that computes potential winnings based on the slider-selected bet amount and the recommended pick's odds. Display the calculation as 'Potential Profit: $X' or 'Potential Return: $Y' using the correct fractional odds payout formula: Profit = betAmount × odds, Total Return = betAmount × (odds + 1).",
+      "reqIds": [
+        "REQ-113"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-race-logging-workflow-in-predictionandresults-component-to-use-the-slider-selected-bet-amount-instead-of-the-system-recommended-bet-size-as-the-true-betting-amount-when-calculating-profit-loss-and-saving-race-records-store-the-user-adjusted-bet-amount-in-the-race-record",
+      "title": "Update the race logging workflow in PredictionAndResults component to use the slider-selected bet amount (instead of the system-recommended bet size) as the true betting amount when calculating profit/loss and saving race records. Store the user-adjusted bet amount in the race record.",
+      "reqIds": [
+        "REQ-114"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-visual-comparison-display-in-the-primary-panel-that-shows-both-the-system-recommended-bet-size-and-the-user-selected-bet-size-side-by-side-making-it-clear-when-the-user-has-adjusted-away-from-the-recommendation-include-visual-indicators-e-g-arrows-or-color-coding-if-the-user-selection-differs-significantly-from-the-recommendation",
+      "title": "Add visual comparison display in the Primary Panel that shows both the system-recommended bet size and the user-selected bet size side by side, making it clear when the user has adjusted away from the recommendation. Include visual indicators (e.g., arrows or color coding) if the user selection differs significantly from the recommendation.",
+      "reqIds": [
+        "REQ-115"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-redesign-the-overall-visual-theme-in-frontend-index-css-and-frontend-tailwind-config-js-to-create-a-sophisticated-high-contrast-aesthetic-with-premium-materials-replace-the-current-racing-inspired-theme-with-a-refined-dark-interface-using-deep-charcoal-backgrounds-oklch-0-15-0-01-240-rich-card-surfaces-oklch-0-18-0-015-240-and-elegant-accent-colors-use-gold-accents-oklch-0-75-0-15-85-for-primary-actions-and-success-states-crimson-oklch-0-55-0-20-25-for-warnings-and-value-indicators-and-electric-cyan-oklch-0-70-0-18-195-for-informational-highlights-ensure-all-colors-maintain-wcag-aa-contrast-ratios",
+      "title": "Redesign the overall visual theme in frontend/index.css and frontend/tailwind.config.js to create a sophisticated, high-contrast aesthetic with premium materials. Replace the current racing-inspired theme with a refined dark interface using deep charcoal backgrounds (oklch(0.15 0.01 240)), rich card surfaces (oklch(0.18 0.015 240)), and elegant accent colors. Use gold accents (oklch(0.75 0.15 85)) for primary actions and success states, crimson (oklch(0.55 0.20 25)) for warnings and value indicators, and electric cyan (oklch(0.70 0.18 195)) for informational highlights. Ensure all colors maintain WCAG AA contrast ratios.",
+      "reqIds": [
+        "REQ-116"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-typography-system-in-frontend-tailwind-config-js-to-use-a-refined-font-hierarchy-set-headings-to-use-inter-with-weights-700-800-and-optical-size-adjustments-body-text-should-use-inter-weight-400-500-with-increased-letter-spacing-0-01em-for-improved-readability-numeric-displays-odds-probabilities-dollar-amounts-should-use-jetbrains-mono-weight-600-with-tabular-figures-enabled-add-custom-text-styles-for-key-ui-elements-display-titles-text-2xl-font-bold-tracking-tight-section-headers-text-lg-font-semibold-tracking-wide-uppercase-text-muted-foreground-and-data-values-font-mono-text-xl-font-semibold-tabular-nums",
+      "title": "Update typography system in frontend/tailwind.config.js to use a refined font hierarchy. Set headings to use Inter with weights 700-800 and optical size adjustments. Body text should use Inter weight 400-500 with increased letter-spacing (0.01em) for improved readability. Numeric displays (odds, probabilities, dollar amounts) should use JetBrains Mono weight 600 with tabular figures enabled. Add custom text styles for key UI elements: display titles (text-2xl font-bold tracking-tight), section headers (text-lg font-semibold tracking-wide uppercase text-muted-foreground), and data values (font-mono text-xl font-semibold tabular-nums).",
+      "reqIds": [
+        "REQ-117"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-redesign-the-layout-component-in-frontend-src-components-layout-tsx-with-enhanced-header-styling-add-a-subtle-gradient-background-to-the-header-from-deep-charcoal-to-slightly-lighter-implement-a-thin-gold-bottom-border-1px-and-add-a-refined-drop-shadow-replace-the-trophy-icon-with-a-more-sophisticated-icon-treatment-or-custom-logo-lockup-increase-header-padding-and-use-the-new-typography-system-for-the-app-title-add-subtle-animations-fade-in-on-mount-and-gentle-parallax-scroll-effect",
+      "title": "Redesign the Layout component in frontend/src/components/Layout.tsx with enhanced header styling. Add a subtle gradient background to the header (from deep charcoal to slightly lighter), implement a thin gold bottom border (1px), and add a refined drop shadow. Replace the trophy icon with a more sophisticated icon treatment or custom logo lockup. Increase header padding and use the new typography system for the app title. Add subtle animations: fade-in on mount and gentle parallax scroll effect.",
+      "reqIds": [
+        "REQ-118"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-redesign-the-dashboard-component-in-frontend-src-components-dashboard-tsx-with-premium-card-layouts-each-metric-card-should-have-subtle-background-gradients-refined-borders-with-gold-accent-on-hover-generous-padding-p-6-rounded-corners-rounded-xl-and-elegant-box-shadows-shadow-lg-with-custom-spread-organize-cards-in-a-masonry-style-grid-with-varying-card-heights-based-on-content-importance-add-micro-interactions-cards-scale-slightly-on-hover-transform-scale-1-02-smooth-transitions-duration-300-and-staggered-fade-in-animations-on-load-the-start-new-race-button-should-be-a-prominent-hero-element-with-gold-gradient-background-large-size-and-pulsing-glow-animation",
+      "title": "Redesign the Dashboard component in frontend/src/components/Dashboard.tsx with premium card layouts. Each metric card should have: subtle background gradients, refined borders with gold accent on hover, generous padding (p-6), rounded corners (rounded-xl), and elegant box shadows (shadow-lg with custom spread). Organize cards in a masonry-style grid with varying card heights based on content importance. Add micro-interactions: cards scale slightly on hover (transform: scale(1.02)), smooth transitions (duration-300), and staggered fade-in animations on load. The START NEW RACE button should be a prominent hero element with gold gradient background, large size, and pulsing glow animation.",
+      "reqIds": [
+        "REQ-119"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-redesign-the-oddsentryform-component-in-frontend-src-components-oddsentryform-tsx-with-refined-input-styling-each-odds-input-field-should-have-dark-background-with-subtle-border-gold-focus-ring-with-glow-effect-increased-font-size-for-odds-values-text-2xl-and-monospace-font-for-numeric-entry-add-visual-separators-between-rows-using-thin-gradient-lines-the-implied-probability-display-should-use-cyan-accent-color-with-a-subtle-background-pill-strategy-mode-selector-should-use-segmented-control-design-with-smooth-sliding-indicator-add-entrance-animations-where-each-input-row-fades-in-sequentially-with-50ms-delay-between-rows",
+      "title": "Redesign the OddsEntryForm component in frontend/src/components/OddsEntryForm.tsx with refined input styling. Each odds input field should have: dark background with subtle border, gold focus ring with glow effect, increased font size for odds values (text-2xl), and monospace font for numeric entry. Add visual separators between rows using thin gradient lines. The implied probability display should use cyan accent color with a subtle background pill. Strategy mode selector should use segmented control design with smooth sliding indicator. Add entrance animations where each input row fades in sequentially with 50ms delay between rows.",
+      "reqIds": [
+        "REQ-120"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-redesign-the-predictionandresults-component-in-frontend-src-components-predictionandresults-tsx-with-sophisticated-panel-layouts-the-primary-panel-best-bet-should-be-a-hero-card-with-gold-gradient-border-large-typography-for-the-recommended-pick-and-confidence-indicator-using-colored-rings-gold-high-amber-medium-crimson-low-value-edge-should-display-with-visual-treatment-positive-edges-show-in-cyan-with-upward-arrow-negative-edges-in-crimson-with-downward-arrow-the-bet-size-slider-should-have-custom-thumb-styling-with-gold-accent-and-real-time-value-tooltip-signal-breakdown-should-use-horizontal-bar-charts-with-gradient-fills-showing-signal-strength-add-smooth-transitions-between-prediction-and-result-logging-states",
+      "title": "Redesign the PredictionAndResults component in frontend/src/components/PredictionAndResults.tsx with sophisticated panel layouts. The Primary Panel (BEST BET) should be a hero card with gold gradient border, large typography for the recommended pick, and confidence indicator using colored rings (gold=high, amber=medium, crimson=low). Value Edge should display with visual treatment: positive edges show in cyan with upward arrow, negative edges in crimson with downward arrow. The bet size slider should have custom thumb styling with gold accent and real-time value tooltip. Signal breakdown should use horizontal bar charts with gradient fills showing signal strength. Add smooth transitions between prediction and result logging states.",
+      "reqIds": [
+        "REQ-121"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-sophisticated-loading-states-and-transitions-throughout-the-application-implement-skeleton-loaders-for-dashboard-cards-with-shimmer-animations-add-smooth-page-transitions-when-navigating-between-tabs-using-fade-and-slide-effects-200ms-duration-with-ease-in-out-create-a-custom-loading-spinner-with-gold-accent-for-async-operations-add-success-error-toast-notifications-with-refined-styling-icons-and-slide-in-animations-from-top-right-implement-optimistic-ui-updates-where-appropriate-to-reduce-perceived-latency",
+      "title": "Add sophisticated loading states and transitions throughout the application. Implement skeleton loaders for Dashboard cards with shimmer animations. Add smooth page transitions when navigating between tabs using fade and slide effects (200ms duration with ease-in-out). Create a custom loading spinner with gold accent for async operations. Add success/error toast notifications with refined styling, icons, and slide-in animations from top-right. Implement optimistic UI updates where appropriate to reduce perceived latency.",
+      "reqIds": [
+        "REQ-122"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-refined-spacing-system-throughout-the-ui-increase-whitespace-between-major-sections-space-y-8-or-space-y-12-add-breathing-room-to-cards-p-6-to-p-8-and-ensure-consistent-margins-update-the-tab-navigation-in-bettingworkflow-to-use-pill-style-buttons-with-smooth-sliding-active-indicator-and-gold-accent-add-subtle-dividers-between-sections-using-gradient-lines-from-transparent-to-accent-color-and-back-ensure-all-interactive-elements-have-proper-focus-states-with-visible-gold-focus-rings-and-adequate-touch-targets-min-44x44px",
+      "title": "Implement refined spacing system throughout the UI. Increase whitespace between major sections (space-y-8 or space-y-12), add breathing room to cards (p-6 to p-8), and ensure consistent margins. Update the tab navigation in BettingWorkflow to use pill-style buttons with smooth sliding active indicator and gold accent. Add subtle dividers between sections using gradient lines (from transparent to accent color and back). Ensure all interactive elements have proper focus states with visible gold focus rings and adequate touch targets (min 44x44px).",
+      "reqIds": [
+        "REQ-123"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-subtle-ambient-animations-and-visual-flourishes-to-enhance-perceived-quality-implement-particle-effects-or-subtle-geometric-patterns-in-the-background-that-respond-to-user-actions-e-g-subtle-sparkles-on-successful-bet-save-add-smooth-number-counting-animations-when-statistics-update-animate-from-old-value-to-new-value-over-500ms-implement-a-subtle-glow-effect-around-high-value-picks-or-strong-confidence-indicators-add-entrance-animations-for-modals-and-dialogs-with-backdrop-blur-and-fade-in-effects",
+      "title": "Add subtle ambient animations and visual flourishes to enhance perceived quality. Implement particle effects or subtle geometric patterns in the background that respond to user actions (e.g., subtle sparkles on successful bet save). Add smooth number counting animations when statistics update (animate from old value to new value over 500ms). Implement a subtle glow effect around high-value picks or strong confidence indicators. Add entrance animations for modals and dialogs with backdrop blur and fade-in effects.",
+      "reqIds": [
+        "REQ-124"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-refine-the-settings-component-in-frontend-src-components-settings-tsx-with-enhanced-visual-hierarchy-and-button-styling-destructive-actions-full-reset-should-use-crimson-with-warning-icon-and-require-explicit-confirmation-with-typed-confirmation-non-destructive-actions-should-use-neutral-styling-export-button-should-use-cyan-accent-add-descriptive-helper-text-under-each-action-in-muted-color-implement-a-refined-dialog-design-with-backdrop-blur-smooth-scale-animation-on-open-and-elegant-close-button-add-visual-indicators-showing-data-counts-e-g-x-races-stored-next-to-relevant-actions",
+      "title": "Refine the Settings component in frontend/src/components/Settings.tsx with enhanced visual hierarchy and button styling. Destructive actions (Full Reset) should use crimson with warning icon and require explicit confirmation with typed confirmation. Non-destructive actions should use neutral styling. Export button should use cyan accent. Add descriptive helper text under each action in muted color. Implement a refined dialog design with backdrop blur, smooth scale animation on open, and elegant close button. Add visual indicators showing data counts (e.g., 'X races stored') next to relevant actions.",
+      "reqIds": [
+        "REQ-125"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -523,46 +973,6 @@
       "id": "AR-7",
       "summary": "Fast, frictionless betting loop UX",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-8",
-      "summary": "Create backend data model to store race history including horse identifiers, odds, predicted probabilities, actual outcomes, and timestamp",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-9",
-      "summary": "Implement odds-to-probability conversion algorithm that anchors all predictions to the entered odds",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-10",
-      "summary": "Build learning system that updates internal trust weights based on prediction accuracy and actual race outcomes",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-11",
-      "summary": "Implement value bet detection algorithm that identifies horses with positive expected value based on odds vs calibrated probabilities",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-12",
-      "summary": "Create ROI tracking system that calculates cumulative return on investment across all logged races",
-      "reqIds": [
-        "REQ-5"
-      ],
       "status": "pending"
     },
     {
@@ -688,6 +1098,118 @@
     {
       "id": "AR-39",
       "summary": "Design and implement Prediction Screen display layout showing Strategy Mode, all odds + implied probabilities, Primary panel (BEST BET #X, Predicted Probability, Implied Probability, Value Edge, Confidence, Recommended Bet), Secondary panel (Signal breakdown: Odds signal, Historical bucket signal, Recent bucket signal, Consistency signal), and optional indicators (Hot Odds Bucket, Trap Odds Bucket)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-40",
+      "summary": "Result logging interface with three-row finish order selection (1st/2nd/3rd place), duplicate prevention, and disabled save button until valid",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-41",
+      "summary": "Post-race save workflow: store race record, update oddsBucketStats, update model weights, update calibration, update bettingHistory, snapshot previous modelState, display 'Race Saved' for 1 second, auto-return to Odds Entry with all fields reset to blank",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-42",
+      "summary": "Gradual weight updating system that compares predicted probability vs implied probability for the winner, increases corresponding weights slightly if bucket-adjustment signals were correct, decreases slightly if consistently wrong, with small incremental changes and no dramatic swings from one race",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-46",
+      "summary": "Update the RaceRecord type definition in frontend/src/types/storage.ts to ensure actualFirst, actualSecond, and actualThird fields store contender indices (0-5) representing finish positions. Verify these fields are included in race record persistence.",
+      "reqIds": [
+        "REQ-73"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-51",
+      "summary": "Update BettingWorkflow component to handle the auto-reset after result logging. When the PredictionAndResults component completes the save workflow and triggers navigation, ensure the BettingWorkflow: (1) Switches active tab to Odds Entry. (2) Resets workflow phase to 'entry'. (3) Clears all race data state (odds, predictions, selections). (4) Ensures OddsEntryForm renders with all six odds fields blank and strategy mode preserved from the previous selection.",
+      "reqIds": [
+        "REQ-78"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-52",
+      "summary": "Implement calibration update logic that compares predicted probability distribution to actual outcomes after each race. If overconfident (predicted probabilities consistently higher than outcomes warrant), reduce calibrationScalar. If well-calibrated, maintain or improve calibrationScalar. Calibration affects both confidence scoring and bet sizing.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-53",
+      "summary": "Implement drift detection system that triggers every 20 races, comparing expected wins (sum of predicted probabilities) vs actual wins. If large deviation detected, temporarily decrease historicalBucketWeight and increase recentBucketWeight to adapt to potential GTA behavior shifts.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-54",
+      "summary": "Implement Undo Last Race functionality that removes the last race record from races array, restores previous modelState snapshot, restores bettingHistory, and restores oddsBucketStats. Undo must be exact and reversible.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-55",
+      "summary": "Redesign Dashboard to display: total races, total profit/loss, ROI, overall accuracy, recent accuracy (last 10 races), calibration score, current confidence level, best performing odds bucket, worst performing odds bucket, current strategy mode. Add session/lifetime toggle. Primary button: START NEW RACE. Secondary buttons: History, Stats, Settings, Reset.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-56",
+      "summary": "Implement Soft Reset (clears session stats only, preserves learning) and Full Reset (deletes all stored data including races, modelState, bettingHistory, oddsBucketStats) options.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-57",
+      "summary": "Implement data export functionality allowing export of races array, modelState snapshots, bettingHistory, and oddsBucketStats in JSON format.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-58",
+      "summary": "Update the color theme in frontend/index.css to replace all orange accent colors with a vibrant green color scheme. Change the primary accent color (currently orange at oklch(0.70 0.20 45)) to a vibrant green (oklch(0.70 0.20 140)). Update the accent-foreground color to maintain proper contrast with the new green background.",
+      "reqIds": [
+        "REQ-98"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-59",
+      "summary": "Update the color theme in frontend/tailwind.config.js to replace the orange accent colors with vibrant green throughout the extended color palette. Change the accent color definition from orange (oklch(0.70 0.20 45)) to vibrant green (oklch(0.70 0.20 140)). Ensure the foreground accent color maintains proper contrast.",
+      "reqIds": [
+        "REQ-99"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-60",
+      "summary": "Correct fractional odds-to-implied-probability formula to 1/(X+1) instead of 1/X throughout the codebase (OddsEntryForm, PredictionAndResults, statsCalculator.ts, all learning systems)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-70",
+      "summary": "Update Dashboard component in frontend/src/components/Dashboard.tsx to ensure all displayed statistics (ROI, win rate, bucket performance) are calculated from race records that use the correct implied probability formula 1 / (odds + 1). Recalculate derived statistics if necessary.",
+      "reqIds": [
+        "REQ-109"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-71",
+      "summary": "Add visual slider to adjust bet amount ($1,000-$10,000) with real-time profit calculation showing potential winnings based on recommended pick's odds",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-72",
+      "summary": "Redesign UI with enhanced visual personality, polish, and immaculate aesthetic improvements to create a cohesive, professional, and engaging visual experience",
       "reqIds": [],
       "status": "pending"
     }

@@ -1,211 +1,200 @@
-import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useRef, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
-
-export interface OddsOnlyData {
-  odds: number[];
-  strategyMode: 'Safe' | 'Balanced' | 'Value' | 'Aggressive';
-}
+import { AlertCircle, AlertTriangle, Sparkles } from 'lucide-react';
+import type { OddsOnlyData, StrategyMode } from '@/types/storage';
 
 interface OddsEntryFormProps {
   onSubmit: (data: OddsOnlyData) => void;
+  strategyMode: StrategyMode;
+  onStrategyModeChange: (mode: StrategyMode) => void;
 }
 
-const STRATEGY_MODES = ['Safe', 'Balanced', 'Value', 'Aggressive'] as const;
+const STRATEGY_MODES: { value: StrategyMode; label: string; description: string; icon: string }[] = [
+  { value: 'safe', label: 'Safe', description: 'Highest probability', icon: '🛡️' },
+  { value: 'balanced', label: 'Balanced', description: 'Mix of probability & value', icon: '⚖️' },
+  { value: 'value', label: 'Value', description: 'Best value edge', icon: '💎' },
+  { value: 'aggressive', label: 'Aggressive', description: 'High-odds value plays', icon: '🚀' },
+];
 
-export function OddsEntryForm({ onSubmit }: OddsEntryFormProps) {
-  const [oddsValues, setOddsValues] = useState<string[]>(['', '', '', '', '', '']);
-  const [strategyMode, setStrategyMode] = useState<'Safe' | 'Balanced' | 'Value' | 'Aggressive'>('Balanced');
+export function OddsEntryForm({ onSubmit, strategyMode, onStrategyModeChange }: OddsEntryFormProps) {
+  const [odds, setOdds] = useState<string[]>(['', '', '', '', '', '']);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  // Load strategy mode from localStorage on mount
+  
   useEffect(() => {
-    const savedStrategy = localStorage.getItem('strategyMode');
-    if (savedStrategy && STRATEGY_MODES.includes(savedStrategy as any)) {
-      setStrategyMode(savedStrategy as 'Safe' | 'Balanced' | 'Value' | 'Aggressive');
-    }
-  }, []);
-
-  // Auto-focus on first field on mount
-  useEffect(() => {
+    // Auto-focus first input on mount
     inputRefs.current[0]?.focus();
   }, []);
-
-  // Persist strategy mode to localStorage
-  useEffect(() => {
-    localStorage.setItem('strategyMode', strategyMode);
-  }, [strategyMode]);
-
-  const validateOdds = (value: string): boolean => {
-    if (value === '') return false;
-    const num = parseInt(value, 10);
-    return !isNaN(num) && num >= 1 && num <= 30 && value === num.toString();
-  };
-
+  
   const handleOddsChange = (index: number, value: string) => {
-    // Allow empty string or valid integer input
-    if (value === '' || /^\d+$/.test(value)) {
-      const num = parseInt(value, 10);
-      // Only update if empty or within range
-      if (value === '' || (num >= 1 && num <= 30)) {
-        const updated = [...oddsValues];
-        updated[index] = value;
-        setOddsValues(updated);
+    // Only allow integers 1-30
+    if (value === '' || (/^\d+$/.test(value) && parseInt(value) >= 1 && parseInt(value) <= 30)) {
+      const newOdds = [...odds];
+      newOdds[index] = value;
+      setOdds(newOdds);
+      
+      // Auto-advance to next field if value is valid
+      if (value !== '' && index < 5) {
+        inputRefs.current[index + 1]?.focus();
+      }
+      
+      // Auto-submit on last field
+      if (value !== '' && index === 5 && newOdds.every(o => o !== '')) {
+        setTimeout(() => handleSubmit(newOdds), 100);
       }
     }
   };
-
+  
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      
-      // Check if current field has valid value
-      if (!validateOdds(oddsValues[index])) {
-        toast.error('Enter a valid odds value (1-30) before continuing');
-        return;
-      }
-
-      // If this is the last field (#6), submit the form
-      if (index === 5) {
-        handleSubmit(e as any);
-      } else {
-        // Move to next field
+      if (index < 5) {
         inputRefs.current[index + 1]?.focus();
+      } else if (odds.every(o => o !== '')) {
+        handleSubmit(odds);
       }
     }
   };
-
-  const calculateImpliedProbability = (odds: string): string => {
-    if (!validateOdds(odds)) return '—';
-    const num = parseInt(odds, 10);
-    const prob = (1 / num) * 100;
-    return prob.toFixed(2) + '%';
-  };
-
-  const calculateTotalImpliedProbability = (): number => {
-    let total = 0;
-    for (const odds of oddsValues) {
-      if (validateOdds(odds)) {
-        const num = parseInt(odds, 10);
-        total += (1 / num) * 100;
-      }
+  
+  const handleSubmit = (currentOdds: string[]) => {
+    if (currentOdds.every(o => o !== '')) {
+      const oddsNumbers = currentOdds.map(o => parseInt(o));
+      onSubmit({ odds: oddsNumbers });
     }
-    return total;
   };
-
-  const totalImpliedProb = calculateTotalImpliedProbability();
-  const hasOverround = totalImpliedProb > 100;
-
-  const isFormValid = oddsValues.every(validateOdds);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!isFormValid) {
-      toast.error('All six odds fields must be filled with values 1-30');
-      return;
-    }
-
-    const data: OddsOnlyData = {
-      odds: oddsValues.map(v => parseInt(v, 10)),
-      strategyMode,
-    };
-
-    onSubmit(data);
+  
+  /**
+   * Calculate implied probability using correct fractional odds formula
+   * For odds X/1: Implied Probability = 1 / (X + 1)
+   */
+  const calculateImpliedProb = (oddsValue: string): number => {
+    if (oddsValue === '') return 0;
+    const oddsNum = parseInt(oddsValue);
+    // CORRECT FORMULA: 1 / (odds + 1)
+    return (1 / (oddsNum + 1)) * 100;
   };
-
+  
+  const totalImplied = odds.reduce((sum, o) => sum + calculateImpliedProb(o), 0);
+  const overround = totalImplied - 100;
+  const allFilled = odds.every(o => o !== '');
+  
+  // Flag extreme overround values
+  const isExtremeOverround = allFilled && (totalImplied > 120 || totalImplied < 95);
+  
   return (
-    <Card className="border-2">
-      <CardHeader>
-        <CardTitle className="text-2xl font-black uppercase">Enter Race Odds</CardTitle>
-        <CardDescription className="text-base">
-          Enter odds for exactly six contenders (integers 1-30 only)
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Six fixed odds rows */}
-          <div className="space-y-3">
-            {oddsValues.map((odds, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <Label className="text-sm font-bold w-8">
-                  #{index + 1}
-                </Label>
-                <div className="flex-1 flex items-center gap-2">
-                  <Input
-                    ref={(el) => {
-                      inputRefs.current[index] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    placeholder=""
-                    value={odds}
-                    onChange={(e) => handleOddsChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    className="font-semibold text-lg w-24"
-                  />
-                  <span className="text-muted-foreground font-medium">/1</span>
-                  <span className="ml-auto text-sm font-semibold text-muted-foreground min-w-[80px] text-right">
-                    {calculateImpliedProbability(odds)}
-                  </span>
+    <div className="space-y-8 max-w-4xl mx-auto animate-slide-up">
+      {/* Strategy Mode Selector */}
+      <Card className="border-border/50 bg-gradient-to-br from-card to-card/50 shadow-premium">
+        <CardHeader>
+          <CardTitle className="text-2xl font-black flex items-center gap-2">
+            <Sparkles className="h-6 w-6 text-primary" />
+            Strategy Mode
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            {STRATEGY_MODES.map((mode, idx) => (
+              <button
+                key={mode.value}
+                onClick={() => onStrategyModeChange(mode.value)}
+                className={`p-6 rounded-xl border-2 transition-all text-left group hover:scale-[1.02] animate-slide-up ${
+                  strategyMode === mode.value
+                    ? 'border-primary bg-primary/10 shadow-glow'
+                    : 'border-border/50 hover:border-primary/50 bg-card/50'
+                }`}
+                style={{ animationDelay: `${idx * 50}ms` }}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-3xl">{mode.icon}</span>
+                  <div className="text-xl font-black">{mode.label}</div>
                 </div>
-              </div>
+                <div className="text-sm text-muted-foreground">{mode.description}</div>
+              </button>
             ))}
           </div>
-
-          {/* Total implied probability and overround warning */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border">
-              <span className="font-bold text-sm uppercase">Total Implied Probability:</span>
-              <span className={`font-black text-lg ${hasOverround ? 'text-destructive' : 'text-foreground'}`}>
-                {totalImpliedProb.toFixed(2)}%
-              </span>
+        </CardContent>
+      </Card>
+      
+      {/* Odds Entry */}
+      <Card className="border-border/50 bg-gradient-to-br from-card to-card/50 shadow-premium">
+        <CardHeader>
+          <CardTitle className="text-2xl font-black">Enter Odds</CardTitle>
+          <p className="text-sm text-muted-foreground mt-2">Enter fractional odds (1-30) for each horse</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {odds.map((value, index) => (
+            <div 
+              key={index} 
+              className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all animate-slide-in"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <Label className="w-16 font-black text-xl text-muted-foreground">#{index + 1}</Label>
+              <div className="flex-1 flex items-center gap-3">
+                <Input
+                  ref={(el) => {
+                    inputRefs.current[index] = el;
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  value={value}
+                  onChange={(e) => handleOddsChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  placeholder="1-30"
+                  className="text-2xl font-mono font-bold h-14 bg-input border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all tabular-nums"
+                />
+                <span className="text-xl text-muted-foreground font-mono">/1</span>
+              </div>
+              <div className="w-28 text-right">
+                {value && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 border border-accent/30">
+                    <span className="text-sm font-bold text-accent tabular-nums">
+                      {calculateImpliedProb(value).toFixed(1)}%
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-            
-            {hasOverround && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="font-semibold">
-                  Overround detected: Bookmaker margin present ({(totalImpliedProb - 100).toFixed(2)}%)
-                </AlertDescription>
-              </Alert>
+          ))}
+          
+          {/* Gradient Divider */}
+          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent my-6" />
+          
+          {/* Total Implied & Overround */}
+          <div className="space-y-3 p-4 rounded-xl bg-muted/20 border border-border/50">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Total Implied Probability</span>
+              <span className="text-2xl font-black tabular-nums">{totalImplied.toFixed(1)}%</span>
+            </div>
+            {allFilled && overround > 0 && (
+              <div className="flex items-center gap-2 text-yellow-500 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm font-semibold">
+                  Overround: +{overround.toFixed(1)}% (normal bookmaker edge)
+                </span>
+              </div>
+            )}
+            {isExtremeOverround && (
+              <div className="flex items-center gap-2 text-orange-500 p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
+                <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm font-bold">
+                  Warning: Extreme overround detected ({totalImplied.toFixed(1)}%)
+                </span>
+              </div>
             )}
           </div>
-
-          {/* Strategy Mode Selector */}
-          <div className="space-y-3">
-            <Label className="text-sm font-bold uppercase">Strategy Mode</Label>
-            <RadioGroup value={strategyMode} onValueChange={(value) => setStrategyMode(value as any)}>
-              <div className="grid grid-cols-2 gap-3">
-                {STRATEGY_MODES.map((mode) => (
-                  <div key={mode} className="flex items-center space-x-2">
-                    <RadioGroupItem value={mode} id={mode} />
-                    <Label htmlFor={mode} className="font-semibold cursor-pointer">
-                      {mode}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </RadioGroup>
-          </div>
-
-          {/* Submit Button */}
-          <Button 
-            type="submit" 
-            className="w-full font-bold text-base uppercase" 
+          
+          <Button
+            onClick={() => handleSubmit(odds)}
+            disabled={!allFilled}
+            className="w-full h-16 text-xl font-black bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-glow hover:shadow-glow-lg transition-all duration-300 mt-6"
             size="lg"
-            disabled={!isFormValid}
           >
-            Enter / Calculate Pick
+            CALCULATE PICK
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

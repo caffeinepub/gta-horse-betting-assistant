@@ -1,569 +1,501 @@
-import { useState, useEffect } from 'react';
-import { useGetValueBets } from '../hooks/useQueries';
-import { useRaceStorage } from '../hooks/useRaceStorage';
-import { getOddsBucketStats, readModelState } from '../lib/storage';
-import { 
-  calculateBucketAdjustedProbabilities, 
-  calculateValueEdge,
-  calculateConfidence,
-  getStrategyRecommendation,
-  calculateBetSize,
-  calculateSignalBreakdownForContender,
-  identifyHotAndTrapBuckets,
-  type SignalBreakdown,
-} from '../lib/statsCalculator';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TrendingUp, AlertCircle, Trophy, DollarSign, Minus, Plus, Flame, AlertTriangle } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Slider } from '@/components/ui/slider';
+import { Trophy, TrendingUp, TrendingDown, DollarSign, Target, Sparkles, ArrowUp, ArrowDown } from 'lucide-react';
+import { useRaceStorage } from '../hooks/useRaceStorage';
+import { getModelState, getOddsBucketStats } from '../lib/storage';
+import { updateSignalWeights } from '../lib/statsCalculator';
+import type { OddsOnlyData, StrategyMode, RaceRecordInput } from '@/types/storage';
 import { toast } from 'sonner';
-import type { Horse } from '../backend';
-import type { OddsOnlyData } from './OddsEntryForm';
-import type { RaceRecordInput, SignalData, ModelWeights, OddsBucketStats, ModelState } from '../types/storage';
-import { cn } from '@/lib/utils';
 
 interface PredictionAndResultsProps {
-  raceData: OddsOnlyData;
-  onResultLogged: () => void;
-  onReset: () => void;
+  oddsData: OddsOnlyData;
+  strategyMode: StrategyMode;
+  onComplete: () => void;
 }
 
-interface ContenderWithProb {
+interface Contender {
   index: number;
-  label: string;
   odds: number;
-  impliedProb: number;
-  adjustedProb: number;
-  normalizedProb: number;
+  impliedProbability: number;
+  adjustedProbability: number;
   valueEdge: number;
 }
 
-export function PredictionAndResults({ raceData, onResultLogged, onReset }: PredictionAndResultsProps) {
+export function PredictionAndResults({ oddsData, strategyMode, onComplete }: PredictionAndResultsProps) {
   const [selectedWinner, setSelectedWinner] = useState<number | null>(null);
-  const [bucketStats, setBucketStats] = useState<OddsBucketStats | null>(null);
-  const [modelState, setModelState] = useState<ModelState | null>(null);
-  const [userBetSize, setUserBetSize] = useState<number | null>(null);
-  const [showBucketInfo, setShowBucketInfo] = useState(false);
+  const [selectedSecond, setSelectedSecond] = useState<number | null>(null);
+  const [selectedThird, setSelectedThird] = useState<number | null>(null);
   const { logRaceToStorage, isLogging } = useRaceStorage();
 
-  // Load bucket stats and model state on mount
-  useEffect(() => {
-    const stats = getOddsBucketStats();
-    setBucketStats(stats);
-    
-    const state = readModelState();
-    setModelState(state);
-  }, []);
-
-  // Convert to backend Horse type for value bet calculation
-  const backendHorses: Horse[] = raceData.odds.map((odds) => ({
-    odds,
-    predictedProb: 1 / odds,
-    actualOutcome: false,
-  }));
-
-  const { data: valueBets, isLoading } = useGetValueBets(backendHorses);
-
-  // Calculate implied probabilities
-  const impliedProbabilities = raceData.odds.map(o => 1 / o);
-
-  // Calculate adjusted probabilities using the five-step prediction engine
-  const contenders: ContenderWithProb[] = raceData.odds.map((odds, index) => {
-    const impliedProb = impliedProbabilities[index];
-    return {
-      index,
-      label: `#${index + 1}`,
-      odds,
-      impliedProb,
-      adjustedProb: impliedProb,
-      normalizedProb: impliedProb,
-      valueEdge: 0,
-    };
-  });
-
-  // Apply bucket-adjusted probabilities if we have bucket stats and model state
-  let adjustedProbs: number[] = impliedProbabilities;
-  let valueEdge: number[] = new Array(6).fill(0);
-  let confidenceLevel: 'high' | 'medium' | 'low' = 'low';
-  let recommendedBetSize = 1000;
-
-  if (bucketStats && modelState) {
-    adjustedProbs = calculateBucketAdjustedProbabilities(
-      raceData.odds,
-      bucketStats,
-      modelState.signalWeights
-    );
-    
-    valueEdge = calculateValueEdge(adjustedProbs, impliedProbabilities);
-    confidenceLevel = calculateConfidence(raceData.odds, bucketStats, modelState);
-    
-    adjustedProbs.forEach((prob, index) => {
-      contenders[index].adjustedProb = prob;
-      contenders[index].normalizedProb = prob;
-      contenders[index].valueEdge = valueEdge[index];
-    });
-  }
-
-  // Get strategy recommendation
-  const recommendation = getStrategyRecommendation(
-    raceData.strategyMode,
-    raceData.odds,
-    adjustedProbs,
-    valueEdge
-  );
-
-  // If should skip, show skip message
-  if (recommendation.shouldSkip) {
-    return (
-      <div className="space-y-6">
-        <Alert className="border-destructive/50 bg-destructive/5">
-          <AlertCircle className="h-5 w-5 text-destructive" />
-          <AlertDescription className="text-base font-semibold">
-            <div className="text-lg font-bold mb-2">SKIP THIS RACE</div>
-            <div>{recommendation.reason}</div>
-            <div className="mt-4">
-              <Button onClick={onReset} variant="outline">
-                Enter New Race
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  // Recommended pick from strategy
-  const recommendedPick = contenders[recommendation.recommendedIndex];
-
-  // Calculate signal breakdown for recommended pick
-  let signalBreakdown: SignalBreakdown | null = null;
-  if (bucketStats && modelState) {
-    signalBreakdown = calculateSignalBreakdownForContender(
-      recommendedPick.index,
-      raceData.odds,
-      bucketStats,
-      modelState.signalWeights
-    );
-  }
-
-  // Calculate recommended bet size
-  if (bucketStats && modelState) {
-    recommendedBetSize = calculateBetSize(
-      recommendedPick.valueEdge,
-      confidenceLevel,
-      modelState
-    );
-  }
-
-  // Use user override if set, otherwise use recommended
-  const effectiveBetSize = userBetSize ?? recommendedBetSize;
-
-  // Identify hot and trap buckets
-  const { hotBucket, trapBucket } = bucketStats ? identifyHotAndTrapBuckets(bucketStats) : { hotBucket: null, trapBucket: null };
-
-  const handleBetSizeAdjust = (delta: number) => {
-    const current = userBetSize ?? recommendedBetSize;
-    const newSize = Math.max(1000, Math.min(10000, current + delta));
-    setUserBetSize(newSize);
+  /**
+   * Calculate implied probability using correct fractional odds formula
+   * For odds X/1: Implied Probability = 1 / (X + 1)
+   */
+  const calculateImpliedProbability = (odds: number): number => {
+    return 1 / (odds + 1);
   };
 
-  const handleLogResult = async (winnerIndex: number) => {
-    setSelectedWinner(winnerIndex);
+  // Calculate implied probabilities for all contenders
+  const impliedProbabilities = oddsData.odds.map(calculateImpliedProbability);
 
-    // Calculate profit/loss
-    const wonBet = winnerIndex === recommendedPick.index;
-    const profitLoss = wonBet ? (recommendedPick.odds * effectiveBetSize) - effectiveBetSize : -effectiveBetSize;
+  // Get model state and bucket stats
+  const modelState = getModelState();
+  const bucketStats = getOddsBucketStats();
 
-    // Create signal breakdown
-    const signalBreakdownData: SignalData[] = contenders.map((c) => ({
-      contenderIndex: c.index,
-      signalStrength: c.normalizedProb,
-      confidence: c.normalizedProb * 100,
-    }));
+  /**
+   * Five-step prediction engine
+   * Step 1: Calculate baseline implied probabilities using 1/(odds+1)
+   * Step 2-5: Apply bucket adjustments and signal weights
+   */
+  const calculatePredictions = (): Contender[] => {
+    const contenders: Contender[] = oddsData.odds.map((odds, index) => {
+      // Step 1: Baseline implied probability (CORRECT FORMULA)
+      const impliedProb = calculateImpliedProbability(odds);
 
-    // Create model weights snapshot
-    const modelWeightsSnapshot: ModelWeights = {
-      oddsWeight: modelState?.signalWeights.oddsWeight ?? 0.4,
-      formWeight: 0.3,
-      trustWeight: 0.3,
-    };
+      // Step 2: Classify into bucket
+      const bucketKey = 
+        odds >= 1 && odds <= 2 ? '1-2' :
+        odds > 2 && odds <= 5 ? '3-5' :
+        odds > 5 && odds <= 10 ? '6-10' :
+        '11-30';
 
-    // Create race record input
-    const raceInput: RaceRecordInput = {
-      odds: raceData.odds,
-      impliedProbabilities: contenders.map((c) => c.impliedProb),
-      strategyMode: raceData.strategyMode,
-      predictedProbabilities: contenders.map((c) => c.normalizedProb),
-      valueEdge: valueEdge,
-      confidenceLevel: confidenceLevel,
-      signalBreakdown: signalBreakdownData,
-      recommendedContender: recommendedPick.index,
-      recommendedBetSize: effectiveBetSize,
-      modelWeightsSnapshot,
-      actualFirst: winnerIndex,
-      actualSecond: -1,
-      actualThird: -1,
-      profitLoss,
-    };
+      const bucket = bucketStats[bucketKey];
 
-    try {
-      await logRaceToStorage(raceInput);
-      toast.success(wonBet ? '🎉 Winner! Race logged successfully' : 'Race logged successfully');
-      onResultLogged();
-    } catch (error) {
-      console.error('Failed to log race:', error);
-      toast.error('Failed to log race result');
+      // Step 3: Calculate bucket adjustment
+      let bucketAdjustment = 0;
+      if (bucket.totalRaces >= 10) {
+        // Use actual win rate vs implied probability delta
+        const winRateDecimal = bucket.actualWinRate / 100;
+        const avgImpliedDecimal = bucket.averageImpliedProbability;
+        bucketAdjustment = (winRateDecimal - avgImpliedDecimal) * 0.3; // 30% weight
+      }
+
+      // Step 4: Apply signal weights
+      const weights = modelState.signalWeights;
+      const adjustedProb = 
+        impliedProb * weights.oddsWeight +
+        (impliedProb + bucketAdjustment) * weights.historicalBucketWeight +
+        impliedProb * weights.recentBucketWeight +
+        impliedProb * weights.consistencyWeight;
+
+      // Step 5: Apply calibration scalar
+      const calibratedProb = Math.min(1.0, Math.max(0.01, adjustedProb * modelState.calibrationScalar));
+
+      // Calculate value edge: Adjusted - Implied
+      const valueEdge = calibratedProb - impliedProb;
+
+      return {
+        index,
+        odds,
+        impliedProbability: impliedProb,
+        adjustedProbability: calibratedProb,
+        valueEdge,
+      };
+    });
+
+    // Normalize probabilities to sum to 1.0
+    const totalProb = contenders.reduce((sum, c) => sum + c.adjustedProbability, 0);
+    contenders.forEach(c => {
+      c.adjustedProbability = c.adjustedProbability / totalProb;
+      c.valueEdge = c.adjustedProbability - c.impliedProbability;
+    });
+
+    return contenders;
+  };
+
+  const contenders = calculatePredictions();
+
+  // Select recommended contender based on strategy mode
+  const selectRecommendedContender = (): Contender => {
+    switch (strategyMode) {
+      case 'safe':
+        // Highest adjusted probability
+        return contenders.reduce((best, current) => 
+          current.adjustedProbability > best.adjustedProbability ? current : best
+        );
+      
+      case 'balanced':
+        // Best combination of probability and value
+        return contenders.reduce((best, current) => {
+          const currentScore = current.adjustedProbability * 0.6 + current.valueEdge * 0.4;
+          const bestScore = best.adjustedProbability * 0.6 + best.valueEdge * 0.4;
+          return currentScore > bestScore ? current : best;
+        });
+      
+      case 'value':
+        // Highest value edge with minimum probability threshold
+        const valueContenders = contenders.filter(c => c.adjustedProbability > 0.05);
+        return valueContenders.reduce((best, current) => 
+          current.valueEdge > best.valueEdge ? current : best
+        );
+      
+      case 'aggressive':
+        // High odds with positive value edge
+        const aggressiveContenders = contenders.filter(c => c.odds >= 5 && c.valueEdge > 0);
+        if (aggressiveContenders.length === 0) {
+          return contenders.reduce((best, current) => 
+            current.valueEdge > best.valueEdge ? current : best
+          );
+        }
+        return aggressiveContenders.reduce((best, current) => 
+          current.valueEdge > best.valueEdge ? current : best
+        );
+      
+      default:
+        return contenders[0];
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
+  const recommended = selectRecommendedContender();
 
-  const confidenceColor = {
-    high: 'text-accent',
-    medium: 'text-yellow-500',
-    low: 'text-orange-500',
-  }[confidenceLevel];
+  // Calculate system-recommended bet sizing based on value edge
+  const calculateSystemBetSize = (contender: Contender): number => {
+    const baseAmount = 1000; // $1,000 base
+    
+    // If no meaningful positive edge, skip
+    if (contender.valueEdge <= 0.02) {
+      return 0; // SKIP THIS RACE
+    }
 
-  const confidenceBgColor = {
-    high: 'bg-accent/10 border-accent/30',
-    medium: 'bg-yellow-500/10 border-yellow-500/30',
-    low: 'bg-orange-500/10 border-orange-500/30',
-  }[confidenceLevel];
+    // Kelly Criterion approximation with conservative fractional Kelly (1/4)
+    const kellyFraction = 0.25;
+    const edge = contender.valueEdge;
+    const kellyBet = baseAmount * edge * kellyFraction;
+
+    // Apply strategy mode multipliers
+    const strategyMultiplier = 
+      strategyMode === 'safe' ? 0.5 :
+      strategyMode === 'balanced' ? 1.0 :
+      strategyMode === 'value' ? 1.5 :
+      2.0; // aggressive
+
+    const recommendedBet = Math.round(kellyBet * strategyMultiplier / 100) * 100;
+
+    // Clamp to $1,000 - $10,000 range
+    return Math.max(1000, Math.min(10000, recommendedBet));
+  };
+
+  const systemRecommendedBetSize = calculateSystemBetSize(recommended);
+
+  // User-selected bet amount state (initialized to system recommendation)
+  const [userBetAmount, setUserBetAmount] = useState<number>(
+    systemRecommendedBetSize > 0 ? systemRecommendedBetSize : 1000
+  );
+
+  // Determine confidence level
+  const confidenceLevel = 
+    recommended.adjustedProbability > 0.4 ? 'high' :
+    recommended.adjustedProbability > 0.25 ? 'medium' :
+    'low';
+
+  // Calculate potential profit and total return based on user-selected bet amount
+  const calculatePotentialProfit = (betAmount: number): { profit: number; totalReturn: number } => {
+    if (systemRecommendedBetSize === 0) {
+      return { profit: 0, totalReturn: 0 };
+    }
+    
+    // Profit = betAmount × odds
+    const profit = betAmount * recommended.odds;
+    // Total return = betAmount × (odds + 1)
+    const totalReturn = betAmount * (recommended.odds + 1);
+    
+    return { profit, totalReturn };
+  };
+
+  const { profit: potentialProfit, totalReturn: potentialTotalReturn } = calculatePotentialProfit(userBetAmount);
+
+  // Calculate profit/loss for fractional odds using user-selected bet amount
+  const calculateProfitLoss = (winnerIndex: number): number => {
+    if (systemRecommendedBetSize === 0) return 0;
+    
+    if (winnerIndex === recommended.index) {
+      // Win: profit = betAmount × odds
+      return userBetAmount * recommended.odds;
+    } else {
+      // Loss: lose the bet amount
+      return -userBetAmount;
+    }
+  };
+
+  // Calculate percentage difference between user selection and system recommendation
+  const calculateBetDifference = (): number => {
+    if (systemRecommendedBetSize === 0) return 0;
+    return ((userBetAmount - systemRecommendedBetSize) / systemRecommendedBetSize) * 100;
+  };
+
+  const betDifference = calculateBetDifference();
+
+  const handleResultSubmit = async () => {
+    if (selectedWinner === null || selectedSecond === null || selectedThird === null) {
+      toast.error('Please select all three positions');
+      return;
+    }
+
+    const profitLoss = calculateProfitLoss(selectedWinner);
+
+    const raceRecord: RaceRecordInput = {
+      odds: oddsData.odds,
+      impliedProbabilities,
+      adjustedProbabilities: contenders.map(c => c.adjustedProbability),
+      recommendedContender: recommended.index,
+      recommendedBetSize: systemRecommendedBetSize,
+      betAmount: userBetAmount, // Store user-selected bet amount
+      actualFirst: selectedWinner,
+      actualSecond: selectedSecond,
+      actualThird: selectedThird,
+      profitLoss,
+      confidenceLevel,
+      strategyMode,
+      timestamp: Date.now(),
+    };
+
+    try {
+      await logRaceToStorage(raceRecord);
+      
+      // Update signal weights based on outcome
+      const updatedWeights = updateSignalWeights(
+        modelState.signalWeights,
+        { ...raceRecord, raceId: '' }, // raceId will be added by storage
+        bucketStats
+      );
+
+      toast.success('Race logged successfully!', {
+        description: profitLoss >= 0 ? `+$${profitLoss.toFixed(2)} profit` : `$${Math.abs(profitLoss).toFixed(2)} loss`
+      });
+      onComplete();
+    } catch (error) {
+      toast.error('Failed to log race');
+      console.error(error);
+    }
+  };
+
+  // Sort contenders by adjusted probability for display
+  const sortedContenders = [...contenders].sort((a, b) => b.adjustedProbability - a.adjustedProbability);
+
+  // Get confidence color
+  const getConfidenceColor = (level: string) => {
+    switch (level) {
+      case 'high': return 'text-primary';
+      case 'medium': return 'text-yellow-500';
+      case 'low': return 'text-crimson';
+      default: return 'text-foreground';
+    }
+  };
+
+  const getConfidenceBg = (level: string) => {
+    switch (level) {
+      case 'high': return 'bg-primary/20 border-primary/30';
+      case 'medium': return 'bg-yellow-500/20 border-yellow-500/30';
+      case 'low': return 'bg-crimson/20 border-crimson/30';
+      default: return 'bg-muted/20 border-border/30';
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* HEADER SECTION: Strategy Mode + All Odds with Implied Probabilities */}
-      <Card className="border-2 border-accent/30">
-        <CardHeader className="pb-3">
+    <div className="space-y-8 max-w-6xl mx-auto animate-fade-in">
+      {/* BEST BET - Hero Card */}
+      <Card className={`border-2 shadow-glow-lg ${confidenceLevel === 'high' ? 'border-primary animate-pulse-glow' : 'border-primary/50'}`}>
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b border-primary/30">
+          <CardTitle className="text-3xl font-black flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/20">
+              <Trophy className="h-8 w-8 text-primary" />
+            </div>
+            BEST BET
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6 pt-6">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">Race Overview</CardTitle>
-            <Badge variant="default" className="text-base font-bold px-4 py-1 bg-accent">
-              {raceData.strategyMode} Strategy
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {contenders.map((contender) => (
-              <div
-                key={contender.index}
-                className="flex items-center justify-between rounded-md border bg-card p-3"
-              >
-                <div className="font-bold text-base">{contender.label}</div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
-                    <div className="text-xs text-muted-foreground">Odds</div>
-                    <div className="font-semibold text-base">{contender.odds.toFixed(2)}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-muted-foreground">Implied Prob</div>
-                    <div className="font-semibold text-base">{(contender.impliedProb * 100).toFixed(1)}%</div>
-                  </div>
-                </div>
+            <div>
+              <div className="text-5xl font-black mb-2">Horse #{recommended.index + 1}</div>
+              <div className="text-xl text-muted-foreground font-mono font-bold">Odds: {recommended.odds}/1</div>
+            </div>
+            <div className="text-right space-y-2">
+              <Badge variant="default" className="text-2xl font-black px-6 py-3 bg-primary text-primary-foreground">
+                {(recommended.adjustedProbability * 100).toFixed(1)}%
+              </Badge>
+              <div className={`text-sm font-bold uppercase tracking-wide ${getConfidenceColor(confidenceLevel)}`}>
+                {confidenceLevel} Confidence
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* PRIMARY PANEL: Best Bet Details */}
-      <Card className="border-2 border-accent bg-gradient-to-br from-background to-accent/5">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Trophy className="h-6 w-6 text-accent" />
-              <div>
-                <CardTitle className="text-2xl">BEST BET: {recommendedPick.label}</CardTitle>
-                <CardDescription className="text-base">Recommended pick based on {raceData.strategyMode} strategy</CardDescription>
-              </div>
-            </div>
-            <Badge variant="outline" className={cn('text-base font-bold uppercase px-4 py-2', confidenceColor)}>
-              {confidenceLevel} Confidence
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Key Metrics Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="rounded-lg border-2 border-accent/30 bg-accent/5 p-4">
-              <div className="text-sm text-muted-foreground mb-1">Predicted Probability</div>
-              <div className="text-3xl font-black text-accent">{(recommendedPick.normalizedProb * 100).toFixed(1)}%</div>
-            </div>
-            <div className="rounded-lg border bg-card p-4">
-              <div className="text-sm text-muted-foreground mb-1">Implied Probability</div>
-              <div className="text-3xl font-black">{(recommendedPick.impliedProb * 100).toFixed(1)}%</div>
-            </div>
-            <div className="rounded-lg border bg-card p-4">
-              <div className="text-sm text-muted-foreground mb-1">Value Edge</div>
-              <div className={cn(
-                'text-3xl font-black',
-                recommendedPick.valueEdge > 0 ? 'text-accent' : 'text-muted-foreground'
-              )}>
-                {recommendedPick.valueEdge > 0 ? '+' : ''}
-                {(recommendedPick.valueEdge * 100).toFixed(1)}%
-              </div>
-            </div>
-            <div className="rounded-lg border bg-card p-4">
-              <div className="text-sm text-muted-foreground mb-1">Odds</div>
-              <div className="text-3xl font-black">{recommendedPick.odds.toFixed(2)}</div>
             </div>
           </div>
 
-          {/* Bet Sizing */}
-          <Card className={cn('border-2', confidenceBgColor)}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Recommended Bet
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-muted-foreground">
-                  System Recommended:
-                </span>
-                <span className="text-lg font-bold">
-                  ${recommendedBetSize.toLocaleString()}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleBetSizeAdjust(-1000)}
-                  disabled={effectiveBetSize <= 1000}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <div className="flex-1 text-center">
-                  <div className="text-sm text-muted-foreground">Your Bet Amount</div>
-                  <div className="text-4xl font-black text-accent">
-                    ${effectiveBetSize.toLocaleString()}
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleBetSizeAdjust(1000)}
-                  disabled={effectiveBetSize >= 10000}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {userBetSize !== null && userBetSize !== recommendedBetSize && (
-                <div className="text-xs text-center text-muted-foreground">
-                  Override active (${Math.abs(userBetSize - recommendedBetSize).toLocaleString()} {userBetSize > recommendedBetSize ? 'above' : 'below'} recommendation)
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {recommendedPick.valueEdge > 0.02 && (
-            <Alert className="border-accent/50 bg-accent/5">
-              <TrendingUp className="h-4 w-4 text-accent" />
-              <AlertDescription>
-                <span className="font-semibold">Value Bet Detected!</span> This pick shows positive expected value
-                based on historical bucket performance.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* SECONDARY PANEL: Signal Breakdown */}
-      {signalBreakdown && (
-        <Card className="border-2">
-          <CardHeader>
-            <CardTitle className="text-xl">Signal Breakdown</CardTitle>
-            <CardDescription>Individual signal contributions to the prediction</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-semibold text-muted-foreground">Odds Signal</div>
-                  <Badge variant="outline">Baseline</Badge>
-                </div>
-                <div className="text-2xl font-bold">{(signalBreakdown.oddsSignal * 100).toFixed(2)}%</div>
-                <div className="text-xs text-muted-foreground mt-1">Implied probability from odds (1/odds)</div>
-              </div>
-
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-semibold text-muted-foreground">Historical Bucket Signal</div>
-                  <Badge variant="outline">Adjustment</Badge>
-                </div>
-                <div className={cn(
-                  'text-2xl font-bold',
-                  signalBreakdown.historicalBucketSignal > 0 ? 'text-accent' : signalBreakdown.historicalBucketSignal < 0 ? 'text-destructive' : ''
-                )}>
-                  {signalBreakdown.historicalBucketSignal > 0 ? '+' : ''}
-                  {(signalBreakdown.historicalBucketSignal * 100).toFixed(2)}%
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">Bucket Win Delta adjustment</div>
-              </div>
-
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-semibold text-muted-foreground">Recent Bucket Signal</div>
-                  <Badge variant="outline">Adjustment</Badge>
-                </div>
-                <div className={cn(
-                  'text-2xl font-bold',
-                  signalBreakdown.recentBucketSignal > 0 ? 'text-accent' : signalBreakdown.recentBucketSignal < 0 ? 'text-destructive' : ''
-                )}>
-                  {signalBreakdown.recentBucketSignal > 0 ? '+' : ''}
-                  {(signalBreakdown.recentBucketSignal * 100).toFixed(2)}%
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">Recent session performance delta</div>
-              </div>
-
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-semibold text-muted-foreground">Consistency Signal</div>
-                  <Badge variant="outline">Adjustment</Badge>
-                </div>
-                <div className={cn(
-                  'text-2xl font-bold',
-                  signalBreakdown.consistencySignal > 0 ? 'text-accent' : signalBreakdown.consistencySignal < 0 ? 'text-destructive' : ''
-                )}>
-                  {signalBreakdown.consistencySignal > 0 ? '+' : ''}
-                  {(signalBreakdown.consistencySignal * 100).toFixed(2)}%
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">Variance-based consistency modifier</div>
+          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border/50">
+            <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Implied Prob</div>
+              <div className="text-2xl font-black tabular-nums">{(recommended.impliedProbability * 100).toFixed(1)}%</div>
+            </div>
+            <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Value Edge</div>
+              <div className={`text-2xl font-black tabular-nums flex items-center gap-2 ${recommended.valueEdge > 0 ? 'text-primary' : 'text-crimson'}`}>
+                {recommended.valueEdge > 0 ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
+                {recommended.valueEdge > 0 ? '+' : ''}{(recommended.valueEdge * 100).toFixed(1)}%
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Strategy</div>
+              <div className="text-2xl font-black uppercase">{strategyMode}</div>
+            </div>
+          </div>
 
-      {/* OPTIONAL: Hot & Trap Odds Buckets */}
-      {(hotBucket || trapBucket) && (
-        <Collapsible open={showBucketInfo} onOpenChange={setShowBucketInfo}>
-          <Card className="border">
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-accent/5 transition-colors">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Bucket Performance Indicators</CardTitle>
-                  <Button variant="ghost" size="sm">
-                    {showBucketInfo ? 'Hide' : 'Show'}
-                  </Button>
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {hotBucket && bucketStats && (
-                    <div className="rounded-lg border-2 border-accent/30 bg-accent/5 p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Flame className="h-5 w-5 text-accent" />
-                        <div className="font-bold text-lg">Hot Odds Bucket</div>
-                      </div>
-                      <div className="text-3xl font-black text-accent mb-2">{hotBucket}</div>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Recent Performance:</span>
-                          <span className="font-semibold">{bucketStats[hotBucket].recentWindowPerformance.toFixed(1)}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Win Rate:</span>
-                          <span className="font-semibold">{bucketStats[hotBucket].actualWinRate.toFixed(1)}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Sample Size:</span>
-                          <span className="font-semibold">{bucketStats[hotBucket].totalRaces} races</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {trapBucket && bucketStats && (
-                    <div className="rounded-lg border-2 border-destructive/30 bg-destructive/5 p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <AlertTriangle className="h-5 w-5 text-destructive" />
-                        <div className="font-bold text-lg">Trap Odds Bucket</div>
-                      </div>
-                      <div className="text-3xl font-black text-destructive mb-2">{trapBucket}</div>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Recent Performance:</span>
-                          <span className="font-semibold">{bucketStats[trapBucket].recentWindowPerformance.toFixed(1)}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Variance:</span>
-                          <span className="font-semibold">{bucketStats[trapBucket].varianceScore.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Sample Size:</span>
-                          <span className="font-semibold">{bucketStats[trapBucket].totalRaces} races</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
-
-      <Separator className="my-6" />
-
-      {/* Result Logger */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Log Race Result</CardTitle>
-          <CardDescription>Select the winning contender to record the outcome</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {selectedWinner === null ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {contenders.map((contender) => (
-                <Button
-                  key={contender.index}
-                  variant={contender.index === recommendedPick.index ? 'default' : 'outline'}
-                  className={cn(
-                    'h-auto flex-col gap-1 py-4',
-                    contender.index === recommendedPick.index && 'bg-accent hover:bg-accent/90'
-                  )}
-                  onClick={() => handleLogResult(contender.index)}
-                  disabled={isLogging}
-                >
-                  <div className="text-xl font-bold">{contender.label}</div>
-                  <div className="text-xs opacity-70">Odds: {contender.odds.toFixed(2)}</div>
-                </Button>
-              ))}
+          {systemRecommendedBetSize === 0 ? (
+            <div className="p-6 rounded-xl bg-yellow-500/10 border-2 border-yellow-500/30 text-center">
+              <div className="text-xl font-black text-yellow-500 mb-2">⚠️ SKIP THIS RACE</div>
+              <div className="text-sm text-muted-foreground">No significant value edge detected</div>
             </div>
           ) : (
-            <Alert className="border-accent/50 bg-accent/5">
-              <AlertCircle className="h-4 w-4 text-accent" />
-              <AlertDescription>
-                Result logged! Winner: <span className="font-bold">#{selectedWinner + 1}</span>
-              </AlertDescription>
-            </Alert>
-          )}
+            <>
+              {/* Bet Sizing */}
+              <div className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-card to-muted/20 border border-border/50">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="text-lg font-black mb-1">Bet Amount</div>
+                    <div className="text-sm text-muted-foreground">Adjust your wager ($1,000 - $10,000)</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-4xl font-black font-mono tabular-nums text-primary">
+                      ${userBetAmount.toLocaleString()}
+                    </div>
+                    {betDifference !== 0 && (
+                      <div className={`text-sm font-semibold ${betDifference > 0 ? 'text-primary' : 'text-crimson'}`}>
+                        {betDifference > 0 ? '+' : ''}{betDifference.toFixed(0)}% vs system
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-          {selectedWinner !== null && (
-            <div className="mt-4 flex gap-2">
-              <Button onClick={onReset} className="flex-1">
-                Enter New Race
-              </Button>
-            </div>
+                <Slider
+                  value={[userBetAmount]}
+                  onValueChange={(values) => setUserBetAmount(values[0])}
+                  min={1000}
+                  max={10000}
+                  step={1000}
+                  className="py-4"
+                />
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">$1,000</span>
+                  <span className="text-muted-foreground font-semibold">
+                    System recommends: ${systemRecommendedBetSize.toLocaleString()}
+                  </span>
+                  <span className="text-muted-foreground">$10,000</span>
+                </div>
+              </div>
+
+              {/* Potential Payout */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-6 rounded-xl bg-primary/10 border-2 border-primary/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign className="h-5 w-5 text-primary" />
+                    <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Potential Profit</div>
+                  </div>
+                  <div className="text-3xl font-black text-primary tabular-nums">
+                    +${potentialProfit.toLocaleString()}
+                  </div>
+                </div>
+                <div className="p-6 rounded-xl bg-accent/10 border-2 border-accent/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="h-5 w-5 text-accent" />
+                    <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Total Return</div>
+                  </div>
+                  <div className="text-3xl font-black text-accent tabular-nums">
+                    ${potentialTotalReturn.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            </>
           )}
+        </CardContent>
+      </Card>
+
+      {/* All Contenders */}
+      <Card className="border-border/50 bg-gradient-to-br from-card to-card/50 shadow-premium">
+        <CardHeader>
+          <CardTitle className="text-2xl font-black flex items-center gap-2">
+            <Sparkles className="h-6 w-6 text-accent" />
+            All Contenders
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {sortedContenders.map((contender, idx) => (
+            <div 
+              key={contender.index}
+              className={`p-4 rounded-xl border-2 transition-all animate-slide-in ${
+                contender.index === recommended.index
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border/50 bg-card/50'
+              }`}
+              style={{ animationDelay: `${idx * 50}ms` }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="text-2xl font-black w-16">#{contender.index + 1}</div>
+                  <div className="text-lg font-mono font-bold text-muted-foreground">{contender.odds}/1</div>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Probability</div>
+                    <div className="text-xl font-black tabular-nums">{(contender.adjustedProbability * 100).toFixed(1)}%</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Value Edge</div>
+                    <div className={`text-xl font-black tabular-nums ${contender.valueEdge > 0 ? 'text-primary' : 'text-crimson'}`}>
+                      {contender.valueEdge > 0 ? '+' : ''}{(contender.valueEdge * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Result Logger */}
+      <Card className="border-border/50 bg-gradient-to-br from-card to-card/50 shadow-premium">
+        <CardHeader>
+          <CardTitle className="text-2xl font-black">Log Race Result</CardTitle>
+          <p className="text-sm text-muted-foreground mt-2">Select the finishing positions</p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-3 gap-4">
+            {['First', 'Second', 'Third'].map((position, posIdx) => {
+              const selected = posIdx === 0 ? selectedWinner : posIdx === 1 ? selectedSecond : selectedThird;
+              const setSelected = posIdx === 0 ? setSelectedWinner : posIdx === 1 ? setSelectedSecond : setSelectedThird;
+              
+              return (
+                <div key={position} className="space-y-3">
+                  <div className="text-sm font-bold uppercase tracking-wide text-muted-foreground">{position} Place</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {oddsData.odds.map((_, idx) => (
+                      <Button
+                        key={idx}
+                        onClick={() => setSelected(idx)}
+                        variant={selected === idx ? 'default' : 'outline'}
+                        className={`h-14 text-lg font-black ${
+                          selected === idx 
+                            ? 'bg-primary text-primary-foreground shadow-glow' 
+                            : 'hover:border-primary/50'
+                        }`}
+                      >
+                        #{idx + 1}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <Button
+            onClick={handleResultSubmit}
+            disabled={isLogging || selectedWinner === null || selectedSecond === null || selectedThird === null}
+            className="w-full h-16 text-xl font-black bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-glow-lg hover:shadow-glow transition-all duration-300"
+            size="lg"
+          >
+            {isLogging ? 'LOGGING...' : 'LOG RACE RESULT'}
+          </Button>
         </CardContent>
       </Card>
     </div>

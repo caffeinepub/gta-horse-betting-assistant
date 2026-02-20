@@ -6,8 +6,6 @@ import Array "mo:core/Array";
 import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 
-
-
 actor {
   type Horse = {
     odds : Float;

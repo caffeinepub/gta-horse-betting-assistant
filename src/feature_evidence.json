@@ -2,8 +2,98 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-redesign-the-predictionandresults-component-layout-to-display-strategy-mode-prominently-at-the-top-followed-by-a-six-row-display-showing-all-odds-with-their-corresponding-real-time-calculated-implied-probabilities-odds-implied-pairs-for-contenders-1-6",
-      "featureTitle": "Redesign the PredictionAndResults component layout to display Strategy Mode prominently at the top, followed by a six-row display showing all odds with their corresponding real-time calculated implied probabilities (odds/implied pairs for contenders #1-#6)",
+      "featureId": "feature-redesign-the-overall-visual-theme-in-frontend-index-css-and-frontend-tailwind-config-js-to-create-a-sophisticated-high-contrast-aesthetic-with-premium-materials-replace-the-current-racing-inspired-theme-with-a-refined-dark-interface-using-deep-charcoal-backgrounds-oklch-0-15-0-01-240-rich-card-surfaces-oklch-0-18-0-015-240-and-elegant-accent-colors-use-gold-accents-oklch-0-75-0-15-85-for-primary-actions-and-success-states-crimson-oklch-0-55-0-20-25-for-warnings-and-value-indicators-and-electric-cyan-oklch-0-70-0-18-195-for-informational-highlights-ensure-all-colors-maintain-wcag-aa-contrast-ratios",
+      "featureTitle": "Redesign the overall visual theme in frontend/index.css and frontend/tailwind.config.js to create a sophisticated, high-contrast aesthetic with premium materials. Replace the current racing-inspired theme with a refined dark interface using deep charcoal backgrounds (oklch(0.15 0.01 240)), rich card surfaces (oklch(0.18 0.015 240)), and elegant accent colors. Use gold accents (oklch(0.75 0.15 85)) for primary actions and success states, crimson (oklch(0.55 0.20 25)) for warnings and value indicators, and electric cyan (oklch(0.70 0.18 195)) for informational highlights. Ensure all colors maintain WCAG AA contrast ratios.",
+      "files": [
+        "frontend/tailwind.config.js"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-116"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-typography-system-in-frontend-tailwind-config-js-to-use-a-refined-font-hierarchy-set-headings-to-use-inter-with-weights-700-800-and-optical-size-adjustments-body-text-should-use-inter-weight-400-500-with-increased-letter-spacing-0-01em-for-improved-readability-numeric-displays-odds-probabilities-dollar-amounts-should-use-jetbrains-mono-weight-600-with-tabular-figures-enabled-add-custom-text-styles-for-key-ui-elements-display-titles-text-2xl-font-bold-tracking-tight-section-headers-text-lg-font-semibold-tracking-wide-uppercase-text-muted-foreground-and-data-values-font-mono-text-xl-font-semibold-tabular-nums",
+      "featureTitle": "Update typography system in frontend/tailwind.config.js to use a refined font hierarchy. Set headings to use Inter with weights 700-800 and optical size adjustments. Body text should use Inter weight 400-500 with increased letter-spacing (0.01em) for improved readability. Numeric displays (odds, probabilities, dollar amounts) should use JetBrains Mono weight 600 with tabular figures enabled. Add custom text styles for key UI elements: display titles (text-2xl font-bold tracking-tight), section headers (text-lg font-semibold tracking-wide uppercase text-muted-foreground), and data values (font-mono text-xl font-semibold tabular-nums).",
+      "files": [
+        "frontend/tailwind.config.js"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-117"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-redesign-the-layout-component-in-frontend-src-components-layout-tsx-with-enhanced-header-styling-add-a-subtle-gradient-background-to-the-header-from-deep-charcoal-to-slightly-lighter-implement-a-thin-gold-bottom-border-1px-and-add-a-refined-drop-shadow-replace-the-trophy-icon-with-a-more-sophisticated-icon-treatment-or-custom-logo-lockup-increase-header-padding-and-use-the-new-typography-system-for-the-app-title-add-subtle-animations-fade-in-on-mount-and-gentle-parallax-scroll-effect",
+      "featureTitle": "Redesign the Layout component in frontend/src/components/Layout.tsx with enhanced header styling. Add a subtle gradient background to the header (from deep charcoal to slightly lighter), implement a thin gold bottom border (1px), and add a refined drop shadow. Replace the trophy icon with a more sophisticated icon treatment or custom logo lockup. Increase header padding and use the new typography system for the app title. Add subtle animations: fade-in on mount and gentle parallax scroll effect.",
+      "files": [
+        "frontend/src/components/Layout.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-118"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-redesign-the-dashboard-component-in-frontend-src-components-dashboard-tsx-with-premium-card-layouts-each-metric-card-should-have-subtle-background-gradients-refined-borders-with-gold-accent-on-hover-generous-padding-p-6-rounded-corners-rounded-xl-and-elegant-box-shadows-shadow-lg-with-custom-spread-organize-cards-in-a-masonry-style-grid-with-varying-card-heights-based-on-content-importance-add-micro-interactions-cards-scale-slightly-on-hover-transform-scale-1-02-smooth-transitions-duration-300-and-staggered-fade-in-animations-on-load-the-start-new-race-button-should-be-a-prominent-hero-element-with-gold-gradient-background-large-size-and-pulsing-glow-animation",
+      "featureTitle": "Redesign the Dashboard component in frontend/src/components/Dashboard.tsx with premium card layouts. Each metric card should have: subtle background gradients, refined borders with gold accent on hover, generous padding (p-6), rounded corners (rounded-xl), and elegant box shadows (shadow-lg with custom spread). Organize cards in a masonry-style grid with varying card heights based on content importance. Add micro-interactions: cards scale slightly on hover (transform: scale(1.02)), smooth transitions (duration-300), and staggered fade-in animations on load. The START NEW RACE button should be a prominent hero element with gold gradient background, large size, and pulsing glow animation.",
+      "files": [
+        "frontend/src/components/Dashboard.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-119"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-redesign-the-oddsentryform-component-in-frontend-src-components-oddsentryform-tsx-with-refined-input-styling-each-odds-input-field-should-have-dark-background-with-subtle-border-gold-focus-ring-with-glow-effect-increased-font-size-for-odds-values-text-2xl-and-monospace-font-for-numeric-entry-add-visual-separators-between-rows-using-thin-gradient-lines-the-implied-probability-display-should-use-cyan-accent-color-with-a-subtle-background-pill-strategy-mode-selector-should-use-segmented-control-design-with-smooth-sliding-indicator-add-entrance-animations-where-each-input-row-fades-in-sequentially-with-50ms-delay-between-rows",
+      "featureTitle": "Redesign the OddsEntryForm component in frontend/src/components/OddsEntryForm.tsx with refined input styling. Each odds input field should have: dark background with subtle border, gold focus ring with glow effect, increased font size for odds values (text-2xl), and monospace font for numeric entry. Add visual separators between rows using thin gradient lines. The implied probability display should use cyan accent color with a subtle background pill. Strategy mode selector should use segmented control design with smooth sliding indicator. Add entrance animations where each input row fades in sequentially with 50ms delay between rows.",
+      "files": [
+        "frontend/src/components/OddsEntryForm.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-120"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-redesign-the-predictionandresults-component-in-frontend-src-components-predictionandresults-tsx-with-sophisticated-panel-layouts-the-primary-panel-best-bet-should-be-a-hero-card-with-gold-gradient-border-large-typography-for-the-recommended-pick-and-confidence-indicator-using-colored-rings-gold-high-amber-medium-crimson-low-value-edge-should-display-with-visual-treatment-positive-edges-show-in-cyan-with-upward-arrow-negative-edges-in-crimson-with-downward-arrow-the-bet-size-slider-should-have-custom-thumb-styling-with-gold-accent-and-real-time-value-tooltip-signal-breakdown-should-use-horizontal-bar-charts-with-gradient-fills-showing-signal-strength-add-smooth-transitions-between-prediction-and-result-logging-states",
+      "featureTitle": "Redesign the PredictionAndResults component in frontend/src/components/PredictionAndResults.tsx with sophisticated panel layouts. The Primary Panel (BEST BET) should be a hero card with gold gradient border, large typography for the recommended pick, and confidence indicator using colored rings (gold=high, amber=medium, crimson=low). Value Edge should display with visual treatment: positive edges show in cyan with upward arrow, negative edges in crimson with downward arrow. The bet size slider should have custom thumb styling with gold accent and real-time value tooltip. Signal breakdown should use horizontal bar charts with gradient fills showing signal strength. Add smooth transitions between prediction and result logging states.",
       "files": [
         "frontend/src/components/PredictionAndResults.tsx"
       ],
@@ -15,14 +105,37 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-64"
+        "REQ-121"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-create-a-primary-panel-section-in-predictionandresults-that-displays-the-recommended-pick-with-the-label-best-bet-x-where-x-is-the-contender-number-1-6-showing-predicted-probability-adjusted-probability-from-prediction-engine-implied-probability-baseline-1-odds-value-edge-adjusted-minus-implied-confidence-level-high-medium-low-with-visual-indicator-and-recommended-bet-dollar-amount-with-bet-sizing-logic",
-      "featureTitle": "Create a Primary Panel section in PredictionAndResults that displays the recommended pick with the label 'BEST BET: #X' (where X is the contender number 1-6), showing Predicted Probability (adjusted probability from prediction engine), Implied Probability (baseline 1/odds), Value Edge (adjusted minus implied), Confidence Level (High/Medium/Low with visual indicator), and Recommended Bet (dollar amount with bet sizing logic)",
+      "featureId": "feature-add-sophisticated-loading-states-and-transitions-throughout-the-application-implement-skeleton-loaders-for-dashboard-cards-with-shimmer-animations-add-smooth-page-transitions-when-navigating-between-tabs-using-fade-and-slide-effects-200ms-duration-with-ease-in-out-create-a-custom-loading-spinner-with-gold-accent-for-async-operations-add-success-error-toast-notifications-with-refined-styling-icons-and-slide-in-animations-from-top-right-implement-optimistic-ui-updates-where-appropriate-to-reduce-perceived-latency",
+      "featureTitle": "Add sophisticated loading states and transitions throughout the application. Implement skeleton loaders for Dashboard cards with shimmer animations. Add smooth page transitions when navigating between tabs using fade and slide effects (200ms duration with ease-in-out). Create a custom loading spinner with gold accent for async operations. Add success/error toast notifications with refined styling, icons, and slide-in animations from top-right. Implement optimistic UI updates where appropriate to reduce perceived latency.",
       "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/BettingWorkflow.tsx",
+        "frontend/src/components/Dashboard.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-122"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-refined-spacing-system-throughout-the-ui-increase-whitespace-between-major-sections-space-y-8-or-space-y-12-add-breathing-room-to-cards-p-6-to-p-8-and-ensure-consistent-margins-update-the-tab-navigation-in-bettingworkflow-to-use-pill-style-buttons-with-smooth-sliding-active-indicator-and-gold-accent-add-subtle-dividers-between-sections-using-gradient-lines-from-transparent-to-accent-color-and-back-ensure-all-interactive-elements-have-proper-focus-states-with-visible-gold-focus-rings-and-adequate-touch-targets-min-44x44px",
+      "featureTitle": "Implement refined spacing system throughout the UI. Increase whitespace between major sections (space-y-8 or space-y-12), add breathing room to cards (p-6 to p-8), and ensure consistent margins. Update the tab navigation in BettingWorkflow to use pill-style buttons with smooth sliding active indicator and gold accent. Add subtle dividers between sections using gradient lines (from transparent to accent color and back). Ensure all interactive elements have proper focus states with visible gold focus rings and adequate touch targets (min 44x44px).",
+      "files": [
+        "frontend/src/components/BettingWorkflow.tsx",
+        "frontend/src/components/Dashboard.tsx",
+        "frontend/src/components/OddsEntryForm.tsx",
         "frontend/src/components/PredictionAndResults.tsx"
       ],
       "components": [
@@ -33,15 +146,18 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-65"
+        "REQ-123"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-create-a-secondary-panel-section-in-predictionandresults-that-displays-a-signal-breakdown-showing-four-individual-signal-contributions-odds-signal-baseline-probability-contribution-historical-bucket-signal-bucket-win-delta-contribution-recent-bucket-signal-recent-session-delta-contribution-and-consistency-signal-consistency-modifier-contribution-from-variance",
-      "featureTitle": "Create a Secondary Panel section in PredictionAndResults that displays a Signal Breakdown showing four individual signal contributions: Odds Signal (baseline probability contribution), Historical Bucket Signal (bucket win delta contribution), Recent Bucket Signal (recent session delta contribution), and Consistency Signal (consistency modifier contribution from variance)",
+      "featureId": "feature-add-subtle-ambient-animations-and-visual-flourishes-to-enhance-perceived-quality-implement-particle-effects-or-subtle-geometric-patterns-in-the-background-that-respond-to-user-actions-e-g-subtle-sparkles-on-successful-bet-save-add-smooth-number-counting-animations-when-statistics-update-animate-from-old-value-to-new-value-over-500ms-implement-a-subtle-glow-effect-around-high-value-picks-or-strong-confidence-indicators-add-entrance-animations-for-modals-and-dialogs-with-backdrop-blur-and-fade-in-effects",
+      "featureTitle": "Add subtle ambient animations and visual flourishes to enhance perceived quality. Implement particle effects or subtle geometric patterns in the background that respond to user actions (e.g., subtle sparkles on successful bet save). Add smooth number counting animations when statistics update (animate from old value to new value over 500ms). Implement a subtle glow effect around high-value picks or strong confidence indicators. Add entrance animations for modals and dialogs with backdrop blur and fade-in effects.",
       "files": [
-        "frontend/src/components/PredictionAndResults.tsx"
+        "frontend/src/components/Dashboard.tsx",
+        "frontend/src/components/PredictionAndResults.tsx",
+        "frontend/src/components/Settings.tsx",
+        "frontend/src/hooks/useCountAnimation.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -51,15 +167,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-66"
+        "REQ-124"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-optional-informational-indicators-to-the-predictionandresults-screen-showing-hot-odds-bucket-the-odds-bucket-with-the-best-recent-performance-and-trap-odds-bucket-the-odds-bucket-with-the-worst-recent-performance-or-highest-variance-displaying-these-in-a-non-intrusive-way-that-doesn-t-interfere-with-the-primary-workflow",
-      "featureTitle": "Add optional informational indicators to the PredictionAndResults screen showing 'Hot Odds Bucket' (the odds bucket with the best recent performance) and 'Trap Odds Bucket' (the odds bucket with the worst recent performance or highest variance), displaying these in a non-intrusive way that doesn't interfere with the primary workflow",
+      "featureId": "feature-refine-the-settings-component-in-frontend-src-components-settings-tsx-with-enhanced-visual-hierarchy-and-button-styling-destructive-actions-full-reset-should-use-crimson-with-warning-icon-and-require-explicit-confirmation-with-typed-confirmation-non-destructive-actions-should-use-neutral-styling-export-button-should-use-cyan-accent-add-descriptive-helper-text-under-each-action-in-muted-color-implement-a-refined-dialog-design-with-backdrop-blur-smooth-scale-animation-on-open-and-elegant-close-button-add-visual-indicators-showing-data-counts-e-g-x-races-stored-next-to-relevant-actions",
+      "featureTitle": "Refine the Settings component in frontend/src/components/Settings.tsx with enhanced visual hierarchy and button styling. Destructive actions (Full Reset) should use crimson with warning icon and require explicit confirmation with typed confirmation. Non-destructive actions should use neutral styling. Export button should use cyan accent. Add descriptive helper text under each action in muted color. Implement a refined dialog design with backdrop blur, smooth scale animation on open, and elegant close button. Add visual indicators showing data counts (e.g., 'X races stored') next to relevant actions.",
       "files": [
-        "frontend/src/components/PredictionAndResults.tsx"
+        "frontend/src/components/Settings.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -69,43 +185,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-67"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-signal-breakdown-calculation-logic-in-statscalculator-ts-to-return-individual-signal-components-odds-signal-historical-bucket-signal-recent-bucket-signal-consistency-signal-as-separate-numeric-values-that-can-be-displayed-in-the-secondary-panel-ensuring-these-values-represent-the-additive-or-multiplicative-contributions-to-the-final-adjusted-probability",
-      "featureTitle": "Update the signal breakdown calculation logic in statsCalculator.ts to return individual signal components (odds signal, historical bucket signal, recent bucket signal, consistency signal) as separate numeric values that can be displayed in the Secondary Panel, ensuring these values represent the additive or multiplicative contributions to the final adjusted probability",
-      "files": [
-        "frontend/src/lib/statsCalculator.ts"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-68"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-restructure-the-predictionandresults-component-layout-hierarchy-to-organize-content-into-three-distinct-visual-sections-1-header-section-with-strategy-mode-and-full-odds-implied-probability-display-2-primary-panel-with-recommended-bet-details-3-secondary-panel-with-signal-breakdown-and-optional-bucket-indicators-ensuring-clear-visual-hierarchy-and-spacing-between-sections",
-      "featureTitle": "Restructure the PredictionAndResults component layout hierarchy to organize content into three distinct visual sections: (1) Header section with Strategy Mode and full odds/implied probability display, (2) Primary Panel with recommended bet details, (3) Secondary Panel with signal breakdown and optional bucket indicators, ensuring clear visual hierarchy and spacing between sections",
-      "files": [
-        "frontend/src/components/PredictionAndResults.tsx"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-69"
+        "REQ-125"
       ],
       "confidence": "high"
     }

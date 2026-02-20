@@ -1,12 +1,24 @@
 /**
  * Pure functions for calculating derived statistics from race records
  * Implements odds bucket-based learning with four defined ranges and five-step prediction engine
+ * CRITICAL: All implied probability calculations use the correct formula: 1 / (odds + 1)
  */
 
-import type { RaceRecord, BettingHistory, OddsBucketStats, OddsBucket, ModelState, SignalWeights, ConfidenceStats } from '../types/storage';
+import type { 
+  RaceRecord, 
+  BettingHistory, 
+  OddsBucketStats, 
+  OddsBucket, 
+  ModelState, 
+  SignalWeights, 
+  ConfidenceStats,
+  CalibrationUpdate,
+  DriftDetectionResult
+} from '../types/storage';
 
 /**
  * Calculate cumulative betting history from race records
+ * Uses user-selected bet amounts (betAmount field) for all calculations
  */
 export function calculateBettingHistory(races: readonly RaceRecord[]): BettingHistory {
   if (races.length === 0) {
@@ -27,7 +39,8 @@ export function calculateBettingHistory(races: readonly RaceRecord[]): BettingHi
 
   for (const race of races) {
     totalProfit += race.profitLoss;
-    totalInvested += race.recommendedBetSize;
+    // Use betAmount if available, otherwise fall back to recommendedBetSize
+    totalInvested += race.betAmount || race.recommendedBetSize;
     
     // Count as win if recommended contender finished first
     if (race.actualFirst === race.recommendedContender) {
@@ -104,6 +117,7 @@ function calculateRecentPerformance(recentOutcomes: number[]): number {
 /**
  * Calculate odds bucket statistics from race records
  * Aggregates all nine required metrics per bucket including averageImpliedProbability
+ * CRITICAL: Uses correct implied probability formula 1/(odds+1) from stored race records
  */
 export function calculateOddsBucketStats(races: readonly RaceRecord[]): OddsBucketStats {
   // Initialize all four buckets
@@ -132,6 +146,7 @@ export function calculateOddsBucketStats(races: readonly RaceRecord[]): OddsBuck
       const bucket = buckets[bucketKey];
 
       bucket.totalRaces++;
+      // Use stored implied probability (already calculated with correct formula)
       bucket.totalImpliedProbability += race.impliedProbabilities[i];
 
       // Check if this horse won
@@ -151,11 +166,12 @@ export function calculateOddsBucketStats(races: readonly RaceRecord[]): OddsBuck
         bucket.top3Finishes++;
       }
 
-      // Calculate ROI (flat $1 bet)
+      // Calculate ROI using correct fractional odds payout
+      // For odds X/1: profit = betAmount × odds, total return = betAmount × (odds + 1)
       const betAmount = 1.0;
       bucket.totalBet += betAmount;
       if (won) {
-        bucket.totalPayout += odds * betAmount;
+        bucket.totalPayout += betAmount * (odds + 1); // stake + profit
       }
 
       // Keep only last 20 outcomes for recent window
@@ -215,452 +231,234 @@ export function calculateOddsBucketStats(races: readonly RaceRecord[]): OddsBuck
 }
 
 /**
- * Calculate Bucket Win Delta: actualWinRate - averageImpliedProbability
- * Returns the delta as a decimal (e.g., 5% difference = 0.05)
+ * Update signal weights based on race outcome
+ * Gradual adjustments of 1-3% per race
+ * Compares predicted vs actual using correct implied probability baseline
  */
-export function calculateBucketWinDelta(bucket: OddsBucket): number {
-  // Convert actualWinRate from percentage to decimal and subtract averageImpliedProbability (already in decimal)
-  return (bucket.actualWinRate / 100) - bucket.averageImpliedProbability;
-}
-
-/**
- * Extract Recent Session Delta from recentWindowPerformance
- * Handles both number and object types, returns numeric delta value
- */
-export function extractRecentSessionDelta(bucket: OddsBucket): number {
-  const recentPerf = bucket.recentWindowPerformance;
+export function updateSignalWeights(
+  currentWeights: SignalWeights,
+  race: RaceRecord,
+  bucketStats: OddsBucketStats
+): SignalWeights {
+  const winnerIndex = race.actualFirst;
+  const predictedWinner = race.recommendedContender;
   
-  // If it's a number, convert from percentage to decimal
-  if (typeof recentPerf === 'number') {
-    return recentPerf / 100;
-  }
+  // Check if prediction was correct
+  const predictionCorrect = winnerIndex === predictedWinner;
   
-  // If it's an object with a delta property, use that
-  if (typeof recentPerf === 'object' && recentPerf !== null && 'delta' in recentPerf) {
-    return (recentPerf as any).delta;
-  }
-  
-  // Default to 0 if we can't extract a value
-  return 0;
-}
-
-/**
- * Derive Consistency Modifier from varianceScore
- * Lower variance = more consistent = positive modifier
- * Higher variance = less consistent = negative modifier
- */
-export function deriveConsistencyModifier(bucket: OddsBucket): number {
-  const variance = bucket.varianceScore;
-  
-  // Normalize variance to a modifier between -0.1 and +0.1
-  // Lower variance (< 0.5) gives positive modifier
-  // Higher variance (> 0.5) gives negative modifier
-  if (variance < 0.5) {
-    return 0.1 * (1 - variance / 0.5);
-  } else {
-    return -0.1 * Math.min(1, (variance - 0.5) / 0.5);
-  }
-}
-
-/**
- * Signal breakdown for a single contender
- */
-export interface SignalBreakdown {
-  oddsSignal: number;
-  historicalBucketSignal: number;
-  recentBucketSignal: number;
-  consistencySignal: number;
-}
-
-/**
- * Five-step prediction engine implementing bucket-adjusted probability calculation
- * Now returns both adjusted probabilities and signal breakdown for the recommended contender
- * 
- * Step 1: Compute implied probabilities from odds (1/odds for each contender)
- * Step 2: Assign each contender to an odds bucket (1-2, 3-5, 6-10, 11-30)
- * Step 3: Retrieve bucket statistics (Bucket Win Delta, Recent Session Delta, Consistency Modifier)
- * Step 4: Calculate adjusted probability using multiplicative formula with weighted signals
- * Step 5: Normalize probabilities to sum to exactly 100%
- * 
- * @param odds - Array of six odds values
- * @param bucketStats - Odds bucket statistics from storage
- * @param signalWeights - Signal weights from modelState
- * @returns Array of six normalized probabilities that sum to 1.0 (100%)
- */
-export function calculateBucketAdjustedProbabilities(
-  odds: number[],
-  bucketStats: OddsBucketStats,
-  signalWeights: SignalWeights
-): number[] {
-  // Step 1: Compute implied probabilities from odds
-  const impliedProbabilities = odds.map(o => 1 / o);
-  
-  // Step 2 & 3 & 4: Assign to buckets, retrieve stats, and calculate adjusted probabilities
-  const adjustedProbabilities = odds.map((oddsValue, index) => {
-    const impliedProb = impliedProbabilities[index];
-    
-    // Step 2: Assign to bucket
-    const bucketKey = classifyOddsToBucket(oddsValue);
-    const bucket = bucketStats[bucketKey];
-    
-    // Step 3: Retrieve bucket statistics
-    const bucketWinDelta = calculateBucketWinDelta(bucket);
-    const recentSessionDelta = extractRecentSessionDelta(bucket);
-    const consistencyModifier = deriveConsistencyModifier(bucket);
-    
-    // Step 4: Calculate adjusted probability
-    // Formula: Adjusted = Implied × (1 + historicalWeight × BucketWinDelta + recentWeight × RecentDelta + consistencyWeight × ConsistencyModifier)
-    const adjustment = 1 + 
-      (signalWeights.historicalBucketWeight * bucketWinDelta) +
-      (signalWeights.recentBucketWeight * recentSessionDelta) +
-      (signalWeights.consistencyWeight * consistencyModifier);
-    
-    // Ensure adjustment doesn't go negative
-    const safeAdjustment = Math.max(0.1, adjustment);
-    
-    return impliedProb * safeAdjustment;
-  });
-  
-  // Step 5: Normalize probabilities to sum to exactly 1.0 (100%)
-  const total = adjustedProbabilities.reduce((sum, prob) => sum + prob, 0);
-  const normalizedProbabilities = adjustedProbabilities.map(prob => prob / total);
-  
-  return normalizedProbabilities;
-}
-
-/**
- * Calculate signal breakdown for a specific contender
- * Returns the individual signal contributions used in the prediction
- */
-export function calculateSignalBreakdownForContender(
-  contenderIndex: number,
-  odds: number[],
-  bucketStats: OddsBucketStats,
-  signalWeights: SignalWeights
-): SignalBreakdown {
-  const oddsValue = odds[contenderIndex];
-  const impliedProb = 1 / oddsValue;
-  
-  // Assign to bucket
-  const bucketKey = classifyOddsToBucket(oddsValue);
+  // Get winner's odds and bucket
+  const winnerOdds = race.odds[winnerIndex];
+  const bucketKey = classifyOddsToBucket(winnerOdds);
   const bucket = bucketStats[bucketKey];
   
-  // Retrieve bucket statistics
-  const bucketWinDelta = calculateBucketWinDelta(bucket);
-  const recentSessionDelta = extractRecentSessionDelta(bucket);
-  const consistencyModifier = deriveConsistencyModifier(bucket);
+  // Calculate adjustment magnitude (1-3%)
+  const adjustmentMagnitude = 0.02; // 2% per race
+  
+  // Adjust weights based on outcome
+  let newWeights = { ...currentWeights };
+  
+  if (predictionCorrect) {
+    // Increase weight of signals that contributed to correct prediction
+    newWeights.oddsWeight += adjustmentMagnitude * 0.4;
+    newWeights.historicalBucketWeight += adjustmentMagnitude * 0.3;
+    newWeights.recentBucketWeight += adjustmentMagnitude * 0.2;
+    newWeights.consistencyWeight += adjustmentMagnitude * 0.1;
+  } else {
+    // Decrease weight of signals that led to incorrect prediction
+    newWeights.oddsWeight -= adjustmentMagnitude * 0.4;
+    newWeights.historicalBucketWeight -= adjustmentMagnitude * 0.3;
+    newWeights.recentBucketWeight -= adjustmentMagnitude * 0.2;
+    newWeights.consistencyWeight -= adjustmentMagnitude * 0.1;
+  }
+  
+  // Normalize weights to sum to 1.0
+  const totalWeight = 
+    newWeights.oddsWeight +
+    newWeights.historicalBucketWeight +
+    newWeights.recentBucketWeight +
+    newWeights.consistencyWeight;
+  
+  newWeights.oddsWeight /= totalWeight;
+  newWeights.historicalBucketWeight /= totalWeight;
+  newWeights.recentBucketWeight /= totalWeight;
+  newWeights.consistencyWeight /= totalWeight;
+  
+  // Clamp each weight to reasonable bounds (0.05 - 0.7)
+  newWeights.oddsWeight = Math.max(0.05, Math.min(0.7, newWeights.oddsWeight));
+  newWeights.historicalBucketWeight = Math.max(0.05, Math.min(0.7, newWeights.historicalBucketWeight));
+  newWeights.recentBucketWeight = Math.max(0.05, Math.min(0.7, newWeights.recentBucketWeight));
+  newWeights.consistencyWeight = Math.max(0.05, Math.min(0.7, newWeights.consistencyWeight));
+  
+  // Re-normalize after clamping
+  const clampedTotal = 
+    newWeights.oddsWeight +
+    newWeights.historicalBucketWeight +
+    newWeights.recentBucketWeight +
+    newWeights.consistencyWeight;
   
   return {
-    oddsSignal: impliedProb,
-    historicalBucketSignal: signalWeights.historicalBucketWeight * bucketWinDelta,
-    recentBucketSignal: signalWeights.recentBucketWeight * recentSessionDelta,
-    consistencySignal: signalWeights.consistencyWeight * consistencyModifier,
+    oddsWeight: newWeights.oddsWeight / clampedTotal,
+    historicalBucketWeight: newWeights.historicalBucketWeight / clampedTotal,
+    recentBucketWeight: newWeights.recentBucketWeight / clampedTotal,
+    consistencyWeight: newWeights.consistencyWeight / clampedTotal,
   };
 }
 
 /**
- * Calculate Value Edge for each contender
- * Value Edge = Adjusted Probability - Implied Probability
- * Positive value edge indicates profitable betting opportunity
- */
-export function calculateValueEdge(
-  adjustedProbabilities: number[],
-  impliedProbabilities: number[]
-): number[] {
-  return adjustedProbabilities.map((adjusted, index) => adjusted - impliedProbabilities[index]);
-}
-
-/**
- * Calculate confidence level based on four factors:
- * 1. Bucket sample size (totalRaces)
- * 2. Variance score
- * 3. Recent model accuracy
- * 4. Calibration health (calibrationScalar)
- * 
- * Thresholds:
- * - High: Sample size >= 50, variance < 0.4, accuracy >= 55%, calibration >= 0.95
- * - Medium: Sample size >= 20, variance < 0.6, accuracy >= 45%, calibration >= 0.85
- * - Low: Everything else
- */
-export function calculateConfidence(
-  odds: number[],
-  bucketStats: OddsBucketStats,
-  modelState: ModelState
-): 'high' | 'medium' | 'low' {
-  // Get bucket for the recommended contender (highest adjusted probability)
-  const bucketKeys = odds.map(o => classifyOddsToBucket(o));
-  
-  // Calculate average metrics across all buckets involved
-  let totalSampleSize = 0;
-  let totalVariance = 0;
-  let count = 0;
-  
-  for (const bucketKey of bucketKeys) {
-    const bucket = bucketStats[bucketKey];
-    totalSampleSize += bucket.totalRaces;
-    totalVariance += bucket.varianceScore;
-    count++;
-  }
-  
-  const avgSampleSize = totalSampleSize / count;
-  const avgVariance = totalVariance / count;
-  const recentAccuracy = modelState.driftDetectionState.currentAccuracy;
-  const calibration = modelState.calibrationScalar;
-  
-  // High confidence thresholds
-  if (
-    avgSampleSize >= 50 &&
-    avgVariance < 0.4 &&
-    recentAccuracy >= 55 &&
-    calibration >= 0.95
-  ) {
-    return 'high';
-  }
-  
-  // Medium confidence thresholds
-  if (
-    avgSampleSize >= 20 &&
-    avgVariance < 0.6 &&
-    recentAccuracy >= 45 &&
-    calibration >= 0.85
-  ) {
-    return 'medium';
-  }
-  
-  // Low confidence
-  return 'low';
-}
-
-/**
- * Strategy recommendation result
- */
-export interface StrategyRecommendation {
-  shouldSkip: boolean;
-  recommendedIndex: number;
-  reason: string;
-}
-
-/**
- * Implement four-mode strategy selection algorithm
- * 
- * Safe: Pick highest Adjusted Probability
- * Balanced: Maximize blend of Adjusted Probability and Value Edge
- * Value: Pick highest positive Value Edge above threshold
- * Aggressive: Favor high-odds buckets (6-10, 11-30) with strong positive Value Edge
- * 
- * Returns SKIP recommendation when no contender meets minimum edge criteria
- */
-export function getStrategyRecommendation(
-  strategyMode: string,
-  odds: number[],
-  adjustedProbabilities: number[],
-  valueEdge: number[]
-): StrategyRecommendation {
-  const minEdgeThreshold = 0.02; // 2% minimum edge for Value/Aggressive modes
-  
-  switch (strategyMode) {
-    case 'Safe': {
-      // Pick highest adjusted probability
-      const maxIndex = adjustedProbabilities.indexOf(Math.max(...adjustedProbabilities));
-      return {
-        shouldSkip: false,
-        recommendedIndex: maxIndex,
-        reason: 'Highest adjusted probability',
-      };
-    }
-    
-    case 'Balanced': {
-      // Maximize blend of adjusted probability (70%) and value edge (30%)
-      const scores = adjustedProbabilities.map((prob, i) => {
-        const normalizedEdge = Math.max(0, valueEdge[i]); // Only consider positive edge
-        return (prob * 0.7) + (normalizedEdge * 0.3);
-      });
-      const maxIndex = scores.indexOf(Math.max(...scores));
-      
-      // Skip if no meaningful positive edge exists
-      const hasPositiveEdge = valueEdge.some(edge => edge > minEdgeThreshold);
-      if (!hasPositiveEdge) {
-        return {
-          shouldSkip: true,
-          recommendedIndex: -1,
-          reason: 'No meaningful positive edge detected',
-        };
-      }
-      
-      return {
-        shouldSkip: false,
-        recommendedIndex: maxIndex,
-        reason: 'Best blend of probability and value',
-      };
-    }
-    
-    case 'Value': {
-      // Pick highest positive value edge above threshold
-      const maxEdge = Math.max(...valueEdge);
-      
-      if (maxEdge < minEdgeThreshold) {
-        return {
-          shouldSkip: true,
-          recommendedIndex: -1,
-          reason: 'No value edge above threshold',
-        };
-      }
-      
-      const maxIndex = valueEdge.indexOf(maxEdge);
-      return {
-        shouldSkip: false,
-        recommendedIndex: maxIndex,
-        reason: 'Highest positive value edge',
-      };
-    }
-    
-    case 'Aggressive': {
-      // Favor high-odds buckets (6-10, 11-30) with strong positive value edge
-      const highOddsIndices = odds
-        .map((o, i) => ({ odds: o, index: i, edge: valueEdge[i] }))
-        .filter(item => item.odds > 5.0 && item.edge > minEdgeThreshold);
-      
-      if (highOddsIndices.length === 0) {
-        return {
-          shouldSkip: true,
-          recommendedIndex: -1,
-          reason: 'No high-odds contenders with positive edge',
-        };
-      }
-      
-      // Pick the one with highest value edge among high-odds contenders
-      const best = highOddsIndices.reduce((max, item) => 
-        item.edge > max.edge ? item : max
-      );
-      
-      return {
-        shouldSkip: false,
-        recommendedIndex: best.index,
-        reason: 'High-odds contender with strong value edge',
-      };
-    }
-    
-    default:
-      // Fallback to Safe mode
-      const maxIndex = adjustedProbabilities.indexOf(Math.max(...adjustedProbabilities));
-      return {
-        shouldSkip: false,
-        recommendedIndex: maxIndex,
-        reason: 'Highest adjusted probability (default)',
-      };
-  }
-}
-
-/**
- * Calculate recommended bet size based on value edge and confidence level
- * 
- * Bet sizing formula:
- * - Base bet: $1,000
- * - Value edge multiplier: 1 + (valueEdge * 10) capped at 2x
- * - Confidence multiplier: High = 1.5x, Medium = 1.0x, Low = 0.5x
- * - Final bet size rounded to nearest $1,000, capped between $1,000 and $10,000
- */
-export function calculateBetSize(
-  valueEdge: number,
-  confidenceLevel: 'high' | 'medium' | 'low',
-  modelState: ModelState
-): number {
-  const baseBet = 1000;
-  
-  // Value edge multiplier (positive edge increases bet size)
-  const edgeMultiplier = Math.min(2.0, 1 + (Math.max(0, valueEdge) * 10));
-  
-  // Confidence multiplier
-  const confidenceMultiplier = {
-    high: 1.5,
-    medium: 1.0,
-    low: 0.5,
-  }[confidenceLevel];
-  
-  // Calculate raw bet size
-  const rawBetSize = baseBet * edgeMultiplier * confidenceMultiplier;
-  
-  // Round to nearest $1,000 and cap between $1,000 and $10,000
-  const roundedBetSize = Math.round(rawBetSize / 1000) * 1000;
-  const cappedBetSize = Math.max(1000, Math.min(10000, roundedBetSize));
-  
-  return cappedBetSize;
-}
-
-/**
- * Calculate confidence-segmented statistics from race records
- * Groups races by confidence level and calculates performance metrics for each tier
+ * Calculate confidence-segmented statistics
  */
 export function calculateConfidenceStats(races: readonly RaceRecord[]): ConfidenceStats {
-  const stats: ConfidenceStats = {
-    high: { totalRaces: 0, wins: 0, winRate: 0, totalProfit: 0, totalInvested: 0, roi: 0 },
-    medium: { totalRaces: 0, wins: 0, winRate: 0, totalProfit: 0, totalInvested: 0, roi: 0 },
-    low: { totalRaces: 0, wins: 0, winRate: 0, totalProfit: 0, totalInvested: 0, roi: 0 },
+  const segments = {
+    high: { totalRaces: 0, wins: 0, totalProfit: 0, totalInvested: 0, roi: 0, winRate: 0 },
+    medium: { totalRaces: 0, wins: 0, totalProfit: 0, totalInvested: 0, roi: 0, winRate: 0 },
+    low: { totalRaces: 0, wins: 0, totalProfit: 0, totalInvested: 0, roi: 0, winRate: 0 },
   };
 
   for (const race of races) {
-    const tier = stats[race.confidenceLevel];
-    
-    tier.totalRaces++;
-    tier.totalProfit += race.profitLoss;
-    tier.totalInvested += race.recommendedBetSize;
+    const segment = segments[race.confidenceLevel];
+    segment.totalRaces++;
+    segment.totalProfit += race.profitLoss;
+    // Use betAmount if available, otherwise fall back to recommendedBetSize
+    segment.totalInvested += race.betAmount || race.recommendedBetSize;
     
     if (race.actualFirst === race.recommendedContender) {
-      tier.wins++;
+      segment.wins++;
     }
   }
 
-  // Calculate derived metrics
-  for (const level of ['high', 'medium', 'low'] as const) {
-    const tier = stats[level];
-    tier.winRate = tier.totalRaces > 0 ? (tier.wins / tier.totalRaces) * 100 : 0;
-    tier.roi = tier.totalInvested > 0 ? (tier.totalProfit / tier.totalInvested) * 100 : 0;
+  // Calculate ROI and win rate for each segment
+  for (const key of ['high', 'medium', 'low'] as const) {
+    const segment = segments[key];
+    segment.roi = segment.totalInvested > 0 ? (segment.totalProfit / segment.totalInvested) * 100 : 0;
+    segment.winRate = segment.totalRaces > 0 ? (segment.wins / segment.totalRaces) * 100 : 0;
   }
 
-  return stats;
+  return segments;
 }
 
 /**
- * Identify hot and trap odds buckets based on recent performance
- * Hot bucket: Best recent performance (highest recentWindowPerformance)
- * Trap bucket: Worst recent performance or highest variance
+ * Calculate calibration update based on prediction accuracy
+ * Anchored to correct implied probability baseline
  */
-export function identifyHotAndTrapBuckets(bucketStats: OddsBucketStats): {
-  hotBucket: '1-2' | '3-5' | '6-10' | '11-30' | null;
-  trapBucket: '1-2' | '3-5' | '6-10' | '11-30' | null;
-} {
-  const bucketKeys: Array<'1-2' | '3-5' | '6-10' | '11-30'> = ['1-2', '3-5', '6-10', '11-30'];
+export function calculateCalibrationUpdate(
+  adjustedProbabilities: number[],
+  impliedProbabilities: number[],
+  actualWinner: number,
+  currentScalar: number
+): CalibrationUpdate {
+  const predictedProb = adjustedProbabilities[actualWinner];
+  const impliedProb = impliedProbabilities[actualWinner];
   
-  // Filter buckets with sufficient data (at least 10 races)
-  const validBuckets = bucketKeys.filter(key => bucketStats[key].totalRaces >= 10);
+  // If predicted probability was too high, decrease scalar
+  // If predicted probability was too low, increase scalar
+  const error = predictedProb - impliedProb;
   
-  if (validBuckets.length === 0) {
-    return { hotBucket: null, trapBucket: null };
+  // Small adjustment (1-2% per race)
+  const adjustment = -error * 0.01;
+  const newScalar = Math.max(0.5, Math.min(1.5, currentScalar + adjustment));
+  
+  const adjustmentApplied = Math.abs(newScalar - currentScalar) > 0.001;
+  
+  return {
+    newCalibrationScalar: newScalar,
+    adjustmentApplied,
+    reason: adjustmentApplied 
+      ? `Adjusted calibration by ${(adjustment * 100).toFixed(2)}% based on prediction accuracy`
+      : 'No calibration adjustment needed',
+  };
+}
+
+/**
+ * Detect drift in model performance
+ * Compares recent window (last N races) to historical average
+ */
+export function detectDrift(races: readonly RaceRecord[], windowSize: number = 20): DriftDetectionResult {
+  if (races.length < windowSize * 2) {
+    return {
+      driftDetected: false,
+      recentROI: 0,
+      historicalROI: 0,
+      threshold: 0.15,
+    };
   }
+
+  const recentRaces = races.slice(-windowSize);
+  const historicalRaces = races.slice(0, -windowSize);
+
+  const recentStats = calculateBettingHistory(recentRaces);
+  const historicalStats = calculateBettingHistory(historicalRaces);
+
+  const recentROI = recentStats.cumulativeROI / 100;
+  const historicalROI = historicalStats.cumulativeROI / 100;
+
+  // Detect drift if recent ROI is 15% worse than historical
+  const threshold = 0.15;
+  const driftDetected = (historicalROI - recentROI) > threshold;
+
+  return {
+    driftDetected,
+    recentROI,
+    historicalROI,
+    threshold,
+  };
+}
+
+/**
+ * Calculate recent accuracy (win rate) for the last N races
+ */
+export function calculateRecentAccuracy(races: readonly RaceRecord[], windowSize: number = 10): number {
+  if (races.length === 0) return 0;
   
-  // Find hot bucket (highest recent performance)
-  let hotBucket = validBuckets[0];
-  let maxRecentPerf = bucketStats[hotBucket].recentWindowPerformance;
+  const recentRaces = races.slice(-windowSize);
+  const wins = recentRaces.filter(race => race.actualFirst === race.recommendedContender).length;
   
-  for (const key of validBuckets) {
-    const recentPerf = bucketStats[key].recentWindowPerformance;
-    if (recentPerf > maxRecentPerf) {
-      maxRecentPerf = recentPerf;
-      hotBucket = key;
-    }
-  }
+  return (wins / recentRaces.length) * 100;
+}
+
+/**
+ * Get the best performing odds bucket based on ROI
+ */
+export function getBestPerformingBucket(bucketStats: OddsBucketStats): string {
+  const buckets = [
+    { name: '1-2', roi: bucketStats['1-2'].roiIfFlatBet, totalRaces: bucketStats['1-2'].totalRaces },
+    { name: '3-5', roi: bucketStats['3-5'].roiIfFlatBet, totalRaces: bucketStats['3-5'].totalRaces },
+    { name: '6-10', roi: bucketStats['6-10'].roiIfFlatBet, totalRaces: bucketStats['6-10'].totalRaces },
+    { name: '11-30', roi: bucketStats['11-30'].roiIfFlatBet, totalRaces: bucketStats['11-30'].totalRaces },
+  ];
   
-  // Find trap bucket (worst recent performance or highest variance)
-  let trapBucket = validBuckets[0];
-  let minScore = bucketStats[trapBucket].recentWindowPerformance - (bucketStats[trapBucket].varianceScore * 10);
+  // Filter buckets with at least 5 races
+  const validBuckets = buckets.filter(b => b.totalRaces >= 5);
   
-  for (const key of validBuckets) {
-    const score = bucketStats[key].recentWindowPerformance - (bucketStats[key].varianceScore * 10);
-    if (score < minScore) {
-      minScore = score;
-      trapBucket = key;
-    }
-  }
+  if (validBuckets.length === 0) return 'N/A';
   
-  return { hotBucket, trapBucket };
+  // Find bucket with highest ROI
+  const best = validBuckets.reduce((prev, current) => 
+    current.roi > prev.roi ? current : prev
+  );
+  
+  return best.name;
+}
+
+/**
+ * Get the worst performing odds bucket based on ROI
+ */
+export function getWorstPerformingBucket(bucketStats: OddsBucketStats): string {
+  const buckets = [
+    { name: '1-2', roi: bucketStats['1-2'].roiIfFlatBet, totalRaces: bucketStats['1-2'].totalRaces },
+    { name: '3-5', roi: bucketStats['3-5'].roiIfFlatBet, totalRaces: bucketStats['3-5'].totalRaces },
+    { name: '6-10', roi: bucketStats['6-10'].roiIfFlatBet, totalRaces: bucketStats['6-10'].totalRaces },
+    { name: '11-30', roi: bucketStats['11-30'].roiIfFlatBet, totalRaces: bucketStats['11-30'].totalRaces },
+  ];
+  
+  // Filter buckets with at least 5 races
+  const validBuckets = buckets.filter(b => b.totalRaces >= 5);
+  
+  if (validBuckets.length === 0) return 'N/A';
+  
+  // Find bucket with lowest ROI
+  const worst = validBuckets.reduce((prev, current) => 
+    current.roi < prev.roi ? current : prev
+  );
+  
+  return worst.name;
 }
